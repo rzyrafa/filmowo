@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Filmowo</string>
+
+    <!-- Nawigacja -->
+    <string name="nav_search">Szukaj</string>
+    <string name="nav_library">Biblioteka</string>
+    <string name="nav_stats">Statystyki</string>
+    <string name="action_back">Wstecz</string>
+
+    <!-- Ekrany tymczasowe -->
+    <string name="search_placeholder">Wyszukaj filmy i seriale</string>
+    <string name="library_placeholder">Twoja biblioteka jest pusta</string>
+    <string name="stats_placeholder">Tu pojawią się Twoje statystyki</string>
+
+    <!-- O aplikacji -->
+    <string name="about_title">O aplikacji</string>
+    <string name="about_version">Wersja %1$s</string>
+    <string name="about_privacy">Wszystkie Twoje dane są przechowywane wyłącznie na tym urządzeniu. Aplikacja nie ma kont, reklam ani analityki.</string>
+    <string name="about_data_source_title">Źródło danych</string>
+    <string name="about_tmdb_attribution">Ta aplikacja korzysta z API TMDB, ale nie jest wspierana ani certyfikowana przez TMDB.</string>
+</resources>
