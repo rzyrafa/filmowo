@@ -1,0 +1,54 @@
+package pl.filmowo.data.remote
+
+import pl.filmowo.data.remote.dto.MovieDetailsDto
+import pl.filmowo.data.remote.dto.SearchResponseDto
+import pl.filmowo.data.remote.dto.TvDetailsDto
+import retrofit2.http.GET
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+/** Endpointy TMDB API v3. Klucz API dokleja [TmdbApiKeyInterceptor]. */
+interface TmdbApi {
+
+    @GET("search/multi")
+    suspend fun searchMulti(
+        @Query("query") query: String,
+        @Query("page") page: Int,
+        @Query("language") language: String,
+        @Query("include_adult") includeAdult: Boolean = false,
+    ): SearchResponseDto
+
+    @GET("search/movie")
+    suspend fun searchMovies(
+        @Query("query") query: String,
+        @Query("page") page: Int,
+        @Query("language") language: String,
+        @Query("include_adult") includeAdult: Boolean = false,
+    ): SearchResponseDto
+
+    @GET("search/tv")
+    suspend fun searchTv(
+        @Query("query") query: String,
+        @Query("page") page: Int,
+        @Query("language") language: String,
+        @Query("include_adult") includeAdult: Boolean = false,
+    ): SearchResponseDto
+
+    @GET("movie/{id}")
+    suspend fun movieDetails(
+        @Path("id") id: Int,
+        @Query("language") language: String,
+    ): MovieDetailsDto
+
+    @GET("tv/{id}")
+    suspend fun tvDetails(
+        @Path("id") id: Int,
+        @Query("language") language: String,
+    ): TvDetailsDto
+
+    companion object {
+        const val BASE_URL = "https://api.themoviedb.org/3/"
+        const val LANGUAGE_PRIMARY = "pl-PL"
+        const val LANGUAGE_FALLBACK = "en-US"
+    }
+}

@@ -13,3 +13,10 @@ data object StatsRoute
 
 @Serializable
 data object AboutRoute
+
+/** Argument `id` czytają ViewModele z SavedStateHandle pod tą samą nazwą. */
+@Serializable
+data class MovieDetailsRoute(val id: Int)
+
+@Serializable
+data class ShowDetailsRoute(val id: Int)

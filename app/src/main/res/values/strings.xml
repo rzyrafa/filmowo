@@ -7,9 +7,53 @@
     <string name="nav_library">Biblioteka</string>
     <string name="nav_stats">Statystyki</string>
     <string name="action_back">Wstecz</string>
+    <string name="action_retry">Spróbuj ponownie</string>
+    <string name="action_clear">Wyczyść</string>
+
+    <!-- Błędy -->
+    <string name="error_network">Brak połączenia z internetem. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="error_unauthorized">Nieprawidłowy klucz API TMDB. Sprawdź wartość TMDB_API_KEY w local.properties.</string>
+    <string name="error_missing_api_key">Brak klucza API TMDB. Dodaj TMDB_API_KEY do pliku local.properties i zbuduj aplikację ponownie.</string>
+    <string name="error_not_found">Nie znaleziono tej pozycji.</string>
+    <string name="error_server">Serwer TMDB jest chwilowo niedostępny. Spróbuj ponownie za chwilę.</string>
+    <string name="error_unknown">Coś poszło nie tak. Spróbuj ponownie.</string>
+
+    <!-- Wyszukiwarka -->
+    <string name="search_hint">Tytuł filmu lub serialu</string>
+    <string name="search_placeholder">Wyszukaj filmy i seriale</string>
+    <string name="search_empty">Nic nie znaleziono</string>
+    <string name="filter_all">Wszystko</string>
+    <string name="filter_movies">Filmy</string>
+    <string name="filter_shows">Seriale</string>
+    <string name="media_movie">Film</string>
+    <string name="media_show">Serial</string>
+
+    <!-- Szczegóły -->
+    <string name="poster_description">Plakat: %1$s</string>
+    <string name="details_overview">Opis</string>
+    <string name="details_no_overview">Brak opisu.</string>
+    <string name="details_seasons">Sezony</string>
+    <string name="season_number">Sezon %1$d</string>
+    <string name="season_specials">Odcinki specjalne</string>
+    <string name="episode_runtime">Odcinek: %1$s</string>
+    <string name="runtime_minutes">%1$d min</string>
+    <string name="runtime_hours">%1$d godz.</string>
+    <string name="runtime_hours_minutes">%1$d godz. %2$d min</string>
 
     <!-- Ekrany tymczasowe -->
-    <string name="search_placeholder">Wyszukaj filmy i seriale</string>
+    <plurals name="seasons_count">
+        <item quantity="one">%d sezon</item>
+        <item quantity="few">%d sezony</item>
+        <item quantity="many">%d sezonów</item>
+        <item quantity="other">%d sezonu</item>
+    </plurals>
+    <plurals name="episodes_count">
+        <item quantity="one">%d odcinek</item>
+        <item quantity="few">%d odcinki</item>
+        <item quantity="many">%d odcinków</item>
+        <item quantity="other">%d odcinka</item>
+    </plurals>
+
     <string name="library_placeholder">Twoja biblioteka jest pusta</string>
     <string name="stats_placeholder">Tu pojawią się Twoje statystyki</string>
 
