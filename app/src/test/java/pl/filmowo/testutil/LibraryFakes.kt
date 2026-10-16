@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import pl.filmowo.data.local.LibraryDao
 import pl.filmowo.data.local.LibraryItemEntity
 import pl.filmowo.data.local.PosterStorage
+import pl.filmowo.data.local.WatchTotals
 import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.domain.model.LibraryItem
 import pl.filmowo.domain.model.LibraryMetadata
@@ -20,6 +21,11 @@ class FakeLibraryDao : LibraryDao {
     override fun observeAll(): Flow<List<LibraryItemEntity>> = items.map { it.values.toList() }
 
     override fun observe(id: Int, type: MediaType): Flow<LibraryItemEntity?> = items.map { it[id to type] }
+
+    override fun observeTotals(type: MediaType, status: WatchStatus): Flow<WatchTotals> = items.map { map ->
+        val matching = map.values.filter { it.mediaType == type && it.status == status }
+        WatchTotals(matching.size, matching.sumOf { (it.runtimeMinutes ?: 0).toLong() })
+    }
 
     override suspend fun get(id: Int, type: MediaType): LibraryItemEntity? = items.value[id to type]
 

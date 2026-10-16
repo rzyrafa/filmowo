@@ -102,8 +102,19 @@
         <item quantity="other">%d odcinka</item>
     </plurals>
 
-    <!-- Ekrany tymczasowe -->
-    <string name="stats_placeholder">Tu pojawią się Twoje statystyki</string>
+    <!-- Statystyki -->
+    <string name="stats_empty">Odhacz obejrzany film albo odcinek, aby zobaczyć statystyki</string>
+    <string name="stats_total_time">Łączny czas oglądania</string>
+    <string name="stats_total_hours">Łącznie %1$d godz.</string>
+    <string name="stats_movies">Obejrzane filmy</string>
+    <string name="stats_episodes">Obejrzane odcinki</string>
+    <string name="stats_time">Czas: %1$s</string>
+    <plurals name="days_count">
+        <item quantity="one">%d dzień</item>
+        <item quantity="few">%d dni</item>
+        <item quantity="many">%d dni</item>
+        <item quantity="other">%d dnia</item>
+    </plurals>
 
     <!-- O aplikacji -->
     <string name="about_title">O aplikacji</string>

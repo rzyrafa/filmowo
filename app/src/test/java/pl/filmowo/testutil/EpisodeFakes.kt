@@ -9,6 +9,7 @@ import pl.filmowo.data.local.EpisodeDao
 import pl.filmowo.data.local.EpisodeEntity
 import pl.filmowo.data.local.EpisodeProgressRow
 import pl.filmowo.data.local.SeasonEntity
+import pl.filmowo.data.local.WatchTotals
 import pl.filmowo.data.repository.EpisodeRepository
 import pl.filmowo.domain.model.Episode
 import pl.filmowo.domain.model.EpisodeInfo
@@ -40,6 +41,11 @@ class FakeEpisodeDao : EpisodeDao {
     override suspend fun getProgressRows(showId: Int) = episodes.value.filter { it.showId == showId }.map { it.toRow() }
 
     override suspend fun getEpisodes(showId: Int) = episodes.value.filter { it.showId == showId }
+
+    override fun observeWatchedTotals(): Flow<WatchTotals> = episodes.map { list ->
+        val watched = list.filter { it.watchedAt != null }
+        WatchTotals(watched.size, watched.sumOf { (it.runtimeMinutes ?: 0).toLong() })
+    }
 
     override suspend fun countEpisodes(showId: Int) = episodes.value.count { it.showId == showId }
 

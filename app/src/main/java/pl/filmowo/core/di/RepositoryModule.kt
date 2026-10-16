@@ -12,6 +12,8 @@ import pl.filmowo.data.repository.EpisodeRepository
 import pl.filmowo.data.repository.EpisodeRepositoryImpl
 import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.data.repository.LibraryRepositoryImpl
+import pl.filmowo.data.repository.StatsRepository
+import pl.filmowo.data.repository.StatsRepositoryImpl
 import pl.filmowo.data.repository.TmdbRepository
 import pl.filmowo.data.repository.TmdbRepositoryImpl
 import javax.inject.Singleton
@@ -31,6 +33,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindEpisodeRepository(impl: EpisodeRepositoryImpl): EpisodeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindStatsRepository(impl: StatsRepositoryImpl): StatsRepository
 
     @Binds
     @Singleton

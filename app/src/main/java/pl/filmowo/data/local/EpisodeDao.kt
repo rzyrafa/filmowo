@@ -31,6 +31,10 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE showId = :showId")
     suspend fun getEpisodes(showId: Int): List<EpisodeEntity>
 
+    /** Liczba i łączny czas wszystkich obejrzanych odcinków (do statystyk). */
+    @Query("SELECT COUNT(*) AS count, COALESCE(SUM(runtimeMinutes), 0) AS minutes FROM episodes WHERE watchedAt IS NOT NULL")
+    fun observeWatchedTotals(): Flow<WatchTotals>
+
     @Query("SELECT COUNT(*) FROM episodes WHERE showId = :showId")
     suspend fun countEpisodes(showId: Int): Int
 
