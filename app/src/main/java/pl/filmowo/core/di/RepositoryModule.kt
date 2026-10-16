@@ -8,6 +8,8 @@ import pl.filmowo.core.network.AndroidConnectivityObserver
 import pl.filmowo.core.network.ConnectivityObserver
 import pl.filmowo.data.local.FilePosterStorage
 import pl.filmowo.data.local.PosterStorage
+import pl.filmowo.data.repository.EpisodeRepository
+import pl.filmowo.data.repository.EpisodeRepositoryImpl
 import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.data.repository.LibraryRepositoryImpl
 import pl.filmowo.data.repository.TmdbRepository
@@ -25,6 +27,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindLibraryRepository(impl: LibraryRepositoryImpl): LibraryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindEpisodeRepository(impl: EpisodeRepositoryImpl): EpisodeRepository
 
     @Binds
     @Singleton

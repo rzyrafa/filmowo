@@ -2,6 +2,7 @@ package pl.filmowo.data.remote
 
 import pl.filmowo.data.remote.dto.MovieDetailsDto
 import pl.filmowo.data.remote.dto.SearchResponseDto
+import pl.filmowo.data.remote.dto.SeasonDetailsDto
 import pl.filmowo.data.remote.dto.TvDetailsDto
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -45,6 +46,13 @@ interface TmdbApi {
         @Path("id") id: Int,
         @Query("language") language: String,
     ): TvDetailsDto
+
+    @GET("tv/{id}/season/{season}")
+    suspend fun seasonDetails(
+        @Path("id") showId: Int,
+        @Path("season") seasonNumber: Int,
+        @Query("language") language: String,
+    ): SeasonDetailsDto
 
     companion object {
         const val BASE_URL = "https://api.themoviedb.org/3/"

@@ -17,6 +17,7 @@ import pl.filmowo.domain.model.MovieDetails
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
+import pl.filmowo.domain.model.SeasonDetails
 import pl.filmowo.domain.model.ShowDetails
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,6 +41,9 @@ class FakeTmdbRepository : TmdbRepository {
     var showResult: AppResult<ShowDetails> = AppResult.Success(show())
     var movieCalls = 0
     var showCalls = 0
+    var seasonHandler: (showId: Int, season: Int) -> AppResult<SeasonDetails> =
+        { _, season -> AppResult.Success(SeasonDetails(season, null, null, emptyList())) }
+    val seasonCalls = mutableListOf<Int>()
 
     override suspend fun search(query: String, filter: MediaFilter, page: Int): AppResult<SearchPage> {
         val call = SearchCall(query, filter, page)
@@ -55,6 +59,11 @@ class FakeTmdbRepository : TmdbRepository {
     override suspend fun showDetails(id: Int): AppResult<ShowDetails> {
         showCalls++
         return showResult
+    }
+
+    override suspend fun seasonDetails(showId: Int, seasonNumber: Int): AppResult<SeasonDetails> {
+        seasonCalls += seasonNumber
+        return seasonHandler(showId, seasonNumber)
     }
 }
 

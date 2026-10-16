@@ -17,6 +17,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -41,8 +42,8 @@ import pl.filmowo.core.ui.components.MediaFilterRow
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.Poster
 import pl.filmowo.core.ui.components.TopLevelTopBar
+import pl.filmowo.core.ui.components.progressLabel
 import pl.filmowo.data.remote.TmdbImages
-import pl.filmowo.domain.model.LibraryItem
 import pl.filmowo.domain.model.MediaType
 import java.io.File
 
@@ -80,13 +81,13 @@ fun LibraryScreen(
             MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterSelected)
             when {
                 state.isLoading -> LoadingContent()
-                state.items.isEmpty() -> PlaceholderContent(
+                state.entries.isEmpty() -> PlaceholderContent(
                     iconRes = R.drawable.ic_video_library,
                     text = stringResource(state.tab.emptyRes),
                 )
                 else -> LazyColumn(Modifier.fillMaxSize()) {
-                    items(state.items, key = { "${it.mediaType}-${it.tmdbId}" }) { item ->
-                        LibraryRow(item, onClick = { onOpenItem(item.tmdbId, item.mediaType) })
+                    items(state.entries, key = { "${it.item.mediaType}-${it.item.tmdbId}" }) { entry ->
+                        LibraryRow(entry, onClick = { onOpenItem(entry.item.tmdbId, entry.item.mediaType) })
                         HorizontalDivider()
                     }
                 }
@@ -120,7 +121,8 @@ private fun SortMenu(current: LibrarySort, onSelect: (LibrarySort) -> Unit) {
 }
 
 @Composable
-private fun LibraryRow(item: LibraryItem, onClick: () -> Unit) {
+private fun LibraryRow(entry: LibraryEntry, onClick: () -> Unit) {
+    val item = entry.item
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -147,6 +149,17 @@ private fun LibraryRow(item: LibraryItem, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            entry.progress?.let { progress ->
+                Text(
+                    progressLabel(progress),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                LinearProgressIndicator(
+                    progress = { progress.percent / 100f },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         if (item.rating != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -11,18 +11,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.WatchStatus
+import pl.filmowo.testutil.FakeEpisodeDao
 import pl.filmowo.testutil.FakeLibraryDao
 import pl.filmowo.testutil.FakePosterStorage
+import pl.filmowo.testutil.episodeEntity
 import pl.filmowo.testutil.metadata
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryRepositoryImplTest {
 
     private val dao = FakeLibraryDao()
+    private val episodeDao = FakeEpisodeDao()
     private val posters = FakePosterStorage()
     private var now = 1_000L
 
-    private fun TestScope.repository() = LibraryRepositoryImpl(dao, posters, { now }, backgroundScope)
+    private fun TestScope.repository() = LibraryRepositoryImpl(dao, episodeDao, posters, { now }, backgroundScope)
 
     @Test
     fun `adding item stores metadata and downloads poster`() = runTest {
@@ -109,6 +112,15 @@ class LibraryRepositoryImplTest {
         repository.setStatus(metadata(id = 7, type = MediaType.MOVIE), WatchStatus.PLANNED)
         repository.setStatus(metadata(id = 7, type = MediaType.TV), WatchStatus.WATCHED)
         assertEquals(2, repository.observeLibrary().first().size)
+    }
+
+    @Test
+    fun `removing a show deletes its episodes`() = runTest {
+        val repository = repository()
+        repository.setStatus(metadata(id = 3, type = MediaType.TV), WatchStatus.WATCHING)
+        episodeDao.upsertEpisodes(listOf(episodeEntity(1, 1, showId = 3), episodeEntity(1, 1, showId = 4)))
+        repository.remove(3, MediaType.TV)
+        assertEquals(listOf(4), episodeDao.episodes.value.map { it.showId })
     }
 
     @Test(expected = IllegalArgumentException::class)

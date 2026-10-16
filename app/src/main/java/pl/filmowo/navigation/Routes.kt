@@ -20,3 +20,7 @@ data class MovieDetailsRoute(val id: Int)
 
 @Serializable
 data class ShowDetailsRoute(val id: Int)
+
+/** `title` – nazwa sezonu do paska (znana z ekranu serialu, dostępna też offline). */
+@Serializable
+data class SeasonRoute(val showId: Int, val seasonNumber: Int, val title: String)

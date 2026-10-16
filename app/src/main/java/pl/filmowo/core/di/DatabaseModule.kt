@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import pl.filmowo.data.local.EpisodeDao
 import pl.filmowo.data.local.FilmowoDatabase
 import pl.filmowo.data.local.LibraryDao
 import javax.inject.Singleton
@@ -22,4 +23,7 @@ object DatabaseModule {
 
     @Provides
     fun provideLibraryDao(database: FilmowoDatabase): LibraryDao = database.libraryDao()
+
+    @Provides
+    fun provideEpisodeDao(database: FilmowoDatabase): EpisodeDao = database.episodeDao()
 }

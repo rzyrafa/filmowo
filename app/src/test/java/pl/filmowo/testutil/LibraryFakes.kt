@@ -35,6 +35,16 @@ class FakeLibraryDao : LibraryDao {
         items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(rating = rating, updatedAt = now)) } ?: map }
     }
 
+    override suspend fun updateStatus(id: Int, type: MediaType, status: WatchStatus, watchedAt: Long?, now: Long) {
+        items.update { map ->
+            map[id to type]?.let { map + ((id to type) to it.copy(status = status, watchedAt = watchedAt, updatedAt = now)) } ?: map
+        }
+    }
+
+    override suspend fun touch(id: Int, type: MediaType, now: Long) {
+        items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(updatedAt = now)) } ?: map }
+    }
+
     override suspend fun setPosterFile(id: Int, type: MediaType, file: String?) {
         items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(localPosterFile = file)) } ?: map }
     }

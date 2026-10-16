@@ -39,6 +39,24 @@ internal class DetailsLoader<T>(
             .launchIn(scope)
     }
 
+    /**
+     * Pobiera dane ponownie bez czyszczenia ekranu (pull-to-refresh).
+     * Gdy dane już są, błąd ich nie zastępuje – zwracany jest do pokazania komunikatu.
+     */
+    suspend fun refresh(): AppError? {
+        job?.cancel()
+        return when (val result = fetch()) {
+            is AppResult.Success -> {
+                _state.value = UiState.Success(result.data)
+                null
+            }
+            is AppResult.Failure -> {
+                if (_state.value !is UiState.Success) _state.value = UiState.Error(result.error)
+                result.error
+            }
+        }
+    }
+
     fun load() {
         job?.cancel()
         _state.value = UiState.Loading

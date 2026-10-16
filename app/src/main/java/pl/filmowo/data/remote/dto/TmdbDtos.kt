@@ -64,3 +64,22 @@ data class SeasonSummaryDto(
     @SerialName("episode_count") val episodeCount: Int = 0,
     @SerialName("air_date") val airDate: String? = null,
 )
+
+@Serializable
+data class SeasonDetailsDto(
+    @SerialName("season_number") val seasonNumber: Int,
+    val name: String? = null,
+    val overview: String? = null,
+    @SerialName("air_date") val airDate: String? = null,
+    val episodes: List<EpisodeDto> = emptyList(),
+)
+
+@Serializable
+data class EpisodeDto(
+    @SerialName("season_number") val seasonNumber: Int,
+    @SerialName("episode_number") val episodeNumber: Int,
+    val name: String? = null,
+    val overview: String? = null,
+    @SerialName("air_date") val airDate: String? = null,
+    val runtime: Int? = null,
+)

@@ -11,11 +11,13 @@ import pl.filmowo.data.remote.TmdbApi.Companion.LANGUAGE_PRIMARY
 import pl.filmowo.data.remote.dto.MovieDetailsDto
 import pl.filmowo.data.remote.dto.SearchItemDto
 import pl.filmowo.data.remote.dto.TvDetailsDto
+import pl.filmowo.domain.model.EpisodeInfo
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
+import pl.filmowo.domain.model.SeasonDetails
 import pl.filmowo.domain.model.SeasonSummary
 import pl.filmowo.domain.model.ShowDetails
 import retrofit2.HttpException
@@ -61,6 +63,25 @@ class TmdbRepositoryImpl @Inject constructor(
             api.tvDetails(id, LANGUAGE_FALLBACK).overview.orEmpty()
         }
         dto.toDomain(overview)
+    }
+
+    override suspend fun seasonDetails(showId: Int, seasonNumber: Int): AppResult<SeasonDetails> = call {
+        val dto = api.seasonDetails(showId, seasonNumber, LANGUAGE_PRIMARY)
+        SeasonDetails(
+            seasonNumber = dto.seasonNumber,
+            name = dto.name?.takeIf { it.isNotBlank() },
+            airDate = dto.airDate?.takeIf { it.isNotBlank() },
+            episodes = dto.episodes.map {
+                EpisodeInfo(
+                    seasonNumber = it.seasonNumber,
+                    episodeNumber = it.episodeNumber,
+                    name = it.name?.takeIf { n -> n.isNotBlank() },
+                    overview = it.overview.orEmpty(),
+                    airDate = it.airDate?.takeIf { d -> d.isNotBlank() },
+                    runtimeMinutes = it.runtime?.takeIf { r -> r > 0 },
+                )
+            },
+        )
     }
 
     private suspend fun <T> call(block: suspend () -> T): AppResult<T> {

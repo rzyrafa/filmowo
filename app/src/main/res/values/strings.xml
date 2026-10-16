@@ -71,6 +71,23 @@
     <string name="rating_remove">Usuń ocenę</string>
     <string name="rating_dialog_title">Twoja ocena</string>
 
+    <!-- Odcinki i postęp -->
+    <string name="progress_title">Postęp</string>
+    <string name="progress_label">S%1$dE%2$d · %3$d%%</string>
+    <string name="progress_not_started">Nie rozpoczęto · %1$d%%</string>
+    <string name="progress_episodes">Obejrzane odcinki: %1$d z %2$d wyemitowanych</string>
+    <string name="season_progress">%1$d/%2$d obejrzanych</string>
+    <string name="season_mark_all">Zaznacz cały sezon</string>
+    <string name="season_unmark_all">Odznacz cały sezon</string>
+    <string name="season_no_episodes">Ten sezon nie ma jeszcze odcinków</string>
+    <string name="tracking_requires_library">Dodaj serial do biblioteki, aby odhaczać odcinki.</string>
+    <string name="tracking_syncing">Pobieranie odcinków do śledzenia…</string>
+    <string name="episode_title">%1$d. %2$s</string>
+    <string name="episode_number">Odcinek %1$d</string>
+    <string name="episode_premiere">Premiera: %1$s</string>
+    <string name="episode_no_date">Data premiery nieznana</string>
+    <string name="refresh_failed">Nie udało się odświeżyć. %1$s</string>
+
     <!-- Liczebniki -->
     <plurals name="seasons_count">
         <item quantity="one">%d sezon</item>

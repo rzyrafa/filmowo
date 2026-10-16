@@ -49,11 +49,13 @@ abstract class LibraryDetailsViewModel<T : Any>(
     fetch: suspend (id: Int) -> AppResult<T>,
     private val toMetadata: (T) -> LibraryMetadata,
     fromLocal: (LibraryMetadata) -> T,
+    /** Dodatkowa praca po zmianie statusu (np. pobranie odcinków serialu). */
+    private val afterStatusChange: suspend (WatchStatus) -> Unit = {},
 ) : ViewModel() {
 
     protected val tmdbId: Int = checkNotNull(savedStateHandle["id"])
 
-    private val loader = DetailsLoader(viewModelScope, connectivity) { fetch(tmdbId) }
+    internal val loader = DetailsLoader(viewModelScope, connectivity) { fetch(tmdbId) }
 
     val state: StateFlow<DetailsUiState<T>> =
         combine(loader.state, libraryRepository.observeItem(tmdbId, mediaType)) { remote, item ->
@@ -81,7 +83,10 @@ abstract class LibraryDetailsViewModel<T : Any>(
     fun onStatusSelected(status: WatchStatus) {
         val details = (state.value.content as? UiState.Success)?.data ?: return
         if (state.value.library?.status == status) return
-        viewModelScope.launch { libraryRepository.setStatus(toMetadata(details), status) }
+        viewModelScope.launch {
+            libraryRepository.setStatus(toMetadata(details), status)
+            afterStatusChange(status)
+        }
     }
 
     fun onRemove() {

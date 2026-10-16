@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import pl.filmowo.core.TimeProvider
 import pl.filmowo.core.di.ApplicationScope
+import pl.filmowo.data.local.EpisodeDao
 import pl.filmowo.data.local.LibraryDao
 import pl.filmowo.data.local.LibraryItemEntity
 import pl.filmowo.data.local.PosterStorage
@@ -19,6 +20,7 @@ import javax.inject.Inject
 
 class LibraryRepositoryImpl @Inject constructor(
     private val dao: LibraryDao,
+    private val episodeDao: EpisodeDao,
     private val posters: PosterStorage,
     private val time: TimeProvider,
     @ApplicationScope private val appScope: CoroutineScope,
@@ -77,6 +79,7 @@ class LibraryRepositoryImpl @Inject constructor(
     override suspend fun remove(id: Int, type: MediaType) {
         val existing = dao.get(id, type) ?: return
         dao.delete(id, type)
+        if (type == MediaType.TV) episodeDao.deleteShow(id)
         existing.localPosterFile?.let { posters.delete(it) }
     }
 

@@ -8,10 +8,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import pl.filmowo.data.repository.EpisodeRepository
 import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.domain.model.LibraryItem
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
+import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.WatchStatus
 import java.text.Collator
 import java.util.Locale
@@ -31,11 +33,17 @@ enum class LibrarySort {
     RATING,
 }
 
+/** Pozycja na liście; [progress] tylko dla seriali z pobranymi odcinkami. */
+data class LibraryEntry(
+    val item: LibraryItem,
+    val progress: ShowProgress?,
+)
+
 data class LibraryUiState(
     val tab: LibraryTab = LibraryTab.WATCHING,
     val filter: MediaFilter = MediaFilter.ALL,
     val sort: LibrarySort = LibrarySort.RECENT,
-    val items: List<LibraryItem> = emptyList(),
+    val entries: List<LibraryEntry> = emptyList(),
     /** Liczba pozycji w każdej zakładce (z uwzględnieniem filtra). */
     val counts: Map<LibraryTab, Int> = emptyMap(),
     val isLoading: Boolean = true,
@@ -44,6 +52,7 @@ data class LibraryUiState(
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     repository: LibraryRepository,
+    episodeRepository: EpisodeRepository,
 ) : ViewModel() {
 
     private val tab = MutableStateFlow(LibraryTab.WATCHING)
@@ -52,14 +61,22 @@ class LibraryViewModel @Inject constructor(
 
     private val titleCollator = Collator.getInstance(Locale.forLanguageTag("pl-PL"))
 
+    private val options = combine(tab, filter, sort) { tab, filter, sort -> Triple(tab, filter, sort) }
+
     val state: StateFlow<LibraryUiState> =
-        combine(repository.observeLibrary(), tab, filter, sort) { all, tab, filter, sort ->
+        combine(repository.observeLibrary(), episodeRepository.observeAllProgress(), options) { all, progress, options ->
+            val (tab, filter, sort) = options
             val filtered = all.filter { it.matches(filter) }
             LibraryUiState(
                 tab = tab,
                 filter = filter,
                 sort = sort,
-                items = filtered.filter { it.status == tab.status }.sortedWith(comparator(sort)),
+                entries = filtered
+                    .filter { it.status == tab.status }
+                    .sortedWith(comparator(sort))
+                    .map { item ->
+                        LibraryEntry(item, progress[item.tmdbId].takeIf { item.mediaType == MediaType.TV })
+                    },
                 counts = LibraryTab.entries.associateWith { t -> filtered.count { it.status == t.status } },
                 isLoading = false,
             )

@@ -5,6 +5,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -16,6 +17,7 @@ import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.WatchStatus
 import pl.filmowo.domain.model.toLibraryMetadata
 import pl.filmowo.testutil.FakeConnectivityObserver
+import pl.filmowo.testutil.FakeEpisodeRepository
 import pl.filmowo.testutil.FakeLibraryRepository
 import pl.filmowo.testutil.FakeTmdbRepository
 import pl.filmowo.testutil.MainDispatcherRule
@@ -35,7 +37,9 @@ class DetailsViewModelTest {
     private val savedState = SavedStateHandle(mapOf("id" to 1))
 
     private fun movieViewModel() = MovieDetailsViewModel(savedState, tmdb, library, connectivity)
-    private fun showViewModel() = ShowDetailsViewModel(savedState, tmdb, library, connectivity)
+    private val episodes = FakeEpisodeRepository()
+
+    private fun showViewModel() = ShowDetailsViewModel(savedState, tmdb, library, episodes, connectivity)
 
     @Test
     fun `movie details start loading and then show data`() = runTest(mainRule.dispatcher) {
@@ -162,5 +166,47 @@ class DetailsViewModelTest {
         runCurrent()
         assertNull(viewModel.state.value.library)
         assertEquals(MediaType.TV, library.items.value.values.single().mediaType)
+    }
+
+    @Test
+    fun `marking show watched checks all its episodes`() = runTest(mainRule.dispatcher) {
+        val viewModel = showViewModel()
+        runCurrent()
+        viewModel.onStatusSelected(WatchStatus.WATCHED)
+        runCurrent()
+        assertEquals(listOf(1), episodes.markShowWatchedCalls)
+        assertTrue(episodes.syncCalls.isEmpty())
+    }
+
+    @Test
+    fun `planning show downloads its episodes`() = runTest(mainRule.dispatcher) {
+        val viewModel = showViewModel()
+        runCurrent()
+        viewModel.onStatusSelected(WatchStatus.PLANNED)
+        runCurrent()
+        assertEquals(listOf(1), episodes.syncCalls)
+    }
+
+    @Test
+    fun `pull to refresh reloads details and syncs episodes of library show`() = runTest(mainRule.dispatcher) {
+        library.put(libraryItem(show().toLibraryMetadata(), WatchStatus.WATCHING))
+        val viewModel = showViewModel()
+        runCurrent()
+        // Otwarcie serialu z biblioteki bez odcinków od razu je pobiera.
+        assertEquals(listOf(1), episodes.syncCalls)
+
+        episodes.syncResult = AppResult.Failure(AppError.NETWORK)
+        viewModel.refresh()
+        runCurrent()
+        assertEquals(2, tmdb.showCalls)
+        assertEquals(listOf(1, 1), episodes.syncCalls)
+        assertFalse(viewModel.tracking.value.isRefreshing)
+        assertEquals(AppError.NETWORK, viewModel.tracking.value.refreshError)
+        // Dane z poprzedniego pobrania zostają na ekranie.
+        assertTrue(viewModel.state.value.content is UiState.Success)
+
+        viewModel.onRefreshErrorShown()
+        runCurrent()
+        assertNull(viewModel.tracking.value.refreshError)
     }
 }

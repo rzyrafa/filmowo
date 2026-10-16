@@ -22,12 +22,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.feature.about.AboutScreen
 import pl.filmowo.feature.details.MovieDetailsScreen
 import pl.filmowo.feature.details.ShowDetailsScreen
 import pl.filmowo.feature.library.LibraryScreen
 import pl.filmowo.feature.search.SearchScreen
+import pl.filmowo.feature.season.SeasonScreen
 import pl.filmowo.feature.stats.StatsScreen
 
 @Composable
@@ -72,7 +74,15 @@ fun FilmowoAppRoot() {
             composable<StatsRoute> { StatsScreen(onOpenAbout = openAbout) }
             composable<AboutRoute> { AboutScreen(onBack = navController::navigateUp) }
             composable<MovieDetailsRoute> { MovieDetailsScreen(onBack = navController::navigateUp) }
-            composable<ShowDetailsRoute> { ShowDetailsScreen(onBack = navController::navigateUp) }
+            composable<ShowDetailsRoute> {
+                ShowDetailsScreen(
+                    onBack = navController::navigateUp,
+                    onOpenSeason = { showId, season, title -> navController.navigate(SeasonRoute(showId, season, title)) },
+                )
+            }
+            composable<SeasonRoute> { entry ->
+                SeasonScreen(title = entry.toRoute<SeasonRoute>().title, onBack = navController::navigateUp)
+            }
         }
     }
 }

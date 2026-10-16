@@ -8,7 +8,10 @@ import org.junit.Rule
 import org.junit.Test
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
+import pl.filmowo.domain.model.EpisodeRef
+import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.WatchStatus
+import pl.filmowo.testutil.FakeEpisodeRepository
 import pl.filmowo.testutil.FakeLibraryRepository
 import pl.filmowo.testutil.MainDispatcherRule
 import pl.filmowo.testutil.libraryItem
@@ -28,7 +31,9 @@ class LibraryViewModelTest {
         put(libraryItem(metadata(5, MediaType.TV, "Sukcesja", 2018), WatchStatus.WATCHING, updatedAt = 50))
     }
 
-    private fun createViewModel() = LibraryViewModel(repository)
+    private val episodes = FakeEpisodeRepository()
+
+    private fun createViewModel() = LibraryViewModel(repository, episodes)
 
     @Test
     fun `counts reflect every tab`() = runTest(mainRule.dispatcher) {
@@ -45,7 +50,7 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         viewModel.onTabSelected(LibraryTab.WATCHED)
         runCurrent()
-        assertEquals(listOf(2, 3, 1), viewModel.state.value.items.map { it.tmdbId })
+        assertEquals(listOf(2, 3, 1), viewModel.state.value.entries.map { it.item.tmdbId })
     }
 
     @Test
@@ -54,7 +59,7 @@ class LibraryViewModelTest {
         viewModel.onTabSelected(LibraryTab.WATCHED)
         viewModel.onFilterSelected(MediaFilter.SHOWS)
         runCurrent()
-        assertEquals(listOf(3), viewModel.state.value.items.map { it.tmdbId })
+        assertEquals(listOf(3), viewModel.state.value.entries.map { it.item.tmdbId })
         assertEquals(1, viewModel.state.value.counts[LibraryTab.WATCHING])
         assertEquals(1, viewModel.state.value.counts[LibraryTab.PLANNED])
         assertEquals(1, viewModel.state.value.counts[LibraryTab.WATCHED])
@@ -72,7 +77,7 @@ class LibraryViewModelTest {
         viewModel.onSortSelected(LibrarySort.TITLE)
         runCurrent()
         // „Ś” po „S”, „Ż” na końcu – nie według kodów Unicode.
-        assertEquals(listOf("Amadeusz", "Ślepnąc od świateł", "Żywot Briana"), viewModel.state.value.items.map { it.metadata.title })
+        assertEquals(listOf("Amadeusz", "Ślepnąc od świateł", "Żywot Briana"), viewModel.state.value.entries.map { it.item.metadata.title })
     }
 
     @Test
@@ -81,11 +86,11 @@ class LibraryViewModelTest {
         viewModel.onTabSelected(LibraryTab.WATCHED)
         viewModel.onSortSelected(LibrarySort.RATING)
         runCurrent()
-        assertEquals(listOf(1, 3, 2), viewModel.state.value.items.map { it.tmdbId })
+        assertEquals(listOf(1, 3, 2), viewModel.state.value.entries.map { it.item.tmdbId })
 
         viewModel.onSortSelected(LibrarySort.YEAR)
         runCurrent()
-        assertEquals(listOf(3, 2, 1), viewModel.state.value.items.map { it.tmdbId })
+        assertEquals(listOf(3, 2, 1), viewModel.state.value.entries.map { it.item.tmdbId })
     }
 
     @Test
@@ -95,7 +100,23 @@ class LibraryViewModelTest {
         runCurrent()
         repository.setStatus(metadata(4, MediaType.TV, "Dark", 2017), WatchStatus.WATCHED)
         runCurrent()
-        assertEquals(emptyList<Int>(), viewModel.state.value.items.map { it.tmdbId })
+        assertEquals(emptyList<Int>(), viewModel.state.value.entries.map { it.item.tmdbId })
         assertEquals(4, viewModel.state.value.counts[LibraryTab.WATCHED])
+    }
+
+    @Test
+    fun `show progress is attached only to shows`() = runTest(mainRule.dispatcher) {
+        episodes.progress.value = mapOf(
+            5 to ShowProgress(6, 10, EpisodeRef(1, 6)),
+            1 to ShowProgress(1, 1, EpisodeRef(1, 1)),
+        )
+        val viewModel = createViewModel()
+        runCurrent()
+        assertEquals(60, viewModel.state.value.entries.single().progress?.percent)
+
+        viewModel.onTabSelected(LibraryTab.WATCHED)
+        runCurrent()
+        // Film o ID 1 nie dostaje postępu serialu o tym samym ID.
+        assertEquals(null, viewModel.state.value.entries.first { it.item.tmdbId == 1 }.progress)
     }
 }
