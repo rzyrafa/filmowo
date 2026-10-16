@@ -18,10 +18,13 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import pl.filmowo.R
 
-/** Plakat w proporcjach 2:3; bez obrazka (lub przy błędzie) pokazuje ikonę zastępczą. */
+/**
+ * Plakat w proporcjach 2:3; bez obrazka (lub przy błędzie) pokazuje ikonę zastępczą.
+ * [model] to adres URL albo zapisany lokalnie [java.io.File].
+ */
 @Composable
 fun Poster(
-    url: String?,
+    model: Any?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
 ) {
@@ -38,9 +41,9 @@ fun Poster(
             modifier = Modifier.size(32.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (url != null) {
+        if (model != null) {
             AsyncImage(
-                model = url,
+                model = model,
                 contentDescription = contentDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

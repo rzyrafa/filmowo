@@ -20,13 +20,13 @@ import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
 import pl.filmowo.core.network.ConnectivityObserver
 import pl.filmowo.data.repository.TmdbRepository
-import pl.filmowo.domain.model.SearchFilter
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchResult
 import javax.inject.Inject
 
 data class SearchUiState(
     val query: String = "",
-    val filter: SearchFilter = SearchFilter.ALL,
+    val filter: MediaFilter = MediaFilter.ALL,
     val results: SearchResultsState = SearchResultsState.Idle,
 )
 
@@ -84,7 +84,7 @@ class SearchViewModel @Inject constructor(
         queryInput.value = query
     }
 
-    fun onFilterChange(filter: SearchFilter) {
+    fun onFilterChange(filter: MediaFilter) {
         if (filter == _state.value.filter) return
         _state.update { it.copy(filter = filter) }
         search(currentQuery())

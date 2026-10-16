@@ -2,8 +2,8 @@ package pl.filmowo.domain.model
 
 enum class MediaType { MOVIE, TV }
 
-/** Filtr wyszukiwania: wszystko, tylko filmy albo tylko seriale. */
-enum class SearchFilter { ALL, MOVIES, SHOWS }
+/** Filtr typu (wyszukiwarka i biblioteka): wszystko, tylko filmy albo tylko seriale. */
+enum class MediaFilter { ALL, MOVIES, SHOWS }
 
 data class SearchResult(
     val id: Int,

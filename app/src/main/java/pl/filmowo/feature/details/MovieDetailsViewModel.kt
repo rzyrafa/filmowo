@@ -1,28 +1,28 @@
 package pl.filmowo.feature.details
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.StateFlow
 import pl.filmowo.core.network.ConnectivityObserver
-import pl.filmowo.core.ui.UiState
+import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.data.repository.TmdbRepository
+import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
+import pl.filmowo.domain.model.toLibraryMetadata
+import pl.filmowo.domain.model.toMovieDetails
 import javax.inject.Inject
 
 @HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    repository: TmdbRepository,
+    tmdbRepository: TmdbRepository,
+    libraryRepository: LibraryRepository,
     connectivity: ConnectivityObserver,
-) : ViewModel() {
-
-    private val movieId: Int = checkNotNull(savedStateHandle["id"])
-
-    private val loader = DetailsLoader(viewModelScope, connectivity) { repository.movieDetails(movieId) }
-
-    val state: StateFlow<UiState<MovieDetails>> = loader.state
-
-    fun retry() = loader.load()
-}
+) : LibraryDetailsViewModel<MovieDetails>(
+    savedStateHandle = savedStateHandle,
+    mediaType = MediaType.MOVIE,
+    libraryRepository = libraryRepository,
+    connectivity = connectivity,
+    fetch = { tmdbRepository.movieDetails(it) },
+    toMetadata = { it.toLibraryMetadata() },
+    fromLocal = { it.toMovieDetails() },
+)

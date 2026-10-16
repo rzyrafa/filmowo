@@ -14,7 +14,7 @@ import pl.filmowo.core.network.ConnectivityObserver
 import pl.filmowo.data.repository.TmdbRepository
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
-import pl.filmowo.domain.model.SearchFilter
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
 import pl.filmowo.domain.model.ShowDetails
@@ -32,7 +32,7 @@ class FakeConnectivityObserver(online: Boolean = true) : ConnectivityObserver {
 }
 
 class FakeTmdbRepository : TmdbRepository {
-    data class SearchCall(val query: String, val filter: SearchFilter, val page: Int)
+    data class SearchCall(val query: String, val filter: MediaFilter, val page: Int)
 
     val searchCalls = mutableListOf<SearchCall>()
     var searchHandler: (SearchCall) -> AppResult<SearchPage> = { AppResult.Success(SearchPage(emptyList(), 1, 1)) }
@@ -41,7 +41,7 @@ class FakeTmdbRepository : TmdbRepository {
     var movieCalls = 0
     var showCalls = 0
 
-    override suspend fun search(query: String, filter: SearchFilter, page: Int): AppResult<SearchPage> {
+    override suspend fun search(query: String, filter: MediaFilter, page: Int): AppResult<SearchPage> {
         val call = SearchCall(query, filter, page)
         searchCalls += call
         return searchHandler(call)

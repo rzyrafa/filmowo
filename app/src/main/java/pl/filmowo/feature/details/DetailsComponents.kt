@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.Poster
 import pl.filmowo.data.remote.TmdbImages
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +41,12 @@ internal fun DetailsTopBar(title: String?, onBack: () -> Unit) {
 internal fun DetailsHeader(
     title: String,
     originalTitle: String?,
-    posterPath: String?,
+    posterModel: Any?,
     metaLines: List<String>,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Poster(
-            url = TmdbImages.posterLarge(posterPath),
+            model = posterModel,
             contentDescription = stringResource(R.string.poster_description, title),
             modifier = Modifier.width(128.dp),
         )
@@ -90,3 +91,7 @@ internal fun formatRuntime(minutes: Int): String {
         else -> stringResource(R.string.runtime_hours_minutes, hours, rest)
     }
 }
+
+/** Plakat zapisany lokalnie (offline) ma pierwszeństwo przed adresem z TMDB. */
+internal fun posterModel(entry: LibraryEntryState?, posterPath: String?): Any? =
+    entry?.localPosterFile?.let(::File) ?: TmdbImages.posterLarge(posterPath)

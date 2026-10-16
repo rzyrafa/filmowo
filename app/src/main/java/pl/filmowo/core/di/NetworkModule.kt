@@ -21,6 +21,7 @@ import javax.inject.Singleton
 object NetworkModule {
 
     const val TMDB_API_KEY = "tmdbApiKey"
+    const val IMAGE_CLIENT = "imageClient"
 
     @Provides
     @Singleton
@@ -41,6 +42,16 @@ object NetworkModule {
             .addInterceptor(TmdbApiKeyInterceptor(apiKey))
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
+            .build()
+
+    /** Klient do pobierania obrazków – bez klucza API (image.tmdb.org go nie wymaga). */
+    @Provides
+    @Singleton
+    @Named(IMAGE_CLIENT)
+    fun provideImageClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .build()
 
     @Provides

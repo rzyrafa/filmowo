@@ -33,19 +33,29 @@ fun ShowDetailsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
-        topBar = { DetailsTopBar((state as? UiState.Success)?.data?.title, onBack) },
+        topBar = { DetailsTopBar((state.content as? UiState.Success)?.data?.title, onBack) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        when (val s = state) {
+        when (val content = state.content) {
             UiState.Loading -> LoadingContent(modifier)
-            is UiState.Error -> ErrorContent(s.error, viewModel::retry, modifier)
-            is UiState.Success -> ShowDetailsContent(s.data, modifier)
+            is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
+            is UiState.Success -> ShowDetailsContent(
+                show = content.data,
+                entry = state.library,
+                viewModel = viewModel,
+                modifier = modifier,
+            )
         }
     }
 }
 
 @Composable
-private fun ShowDetailsContent(show: ShowDetails, modifier: Modifier = Modifier) {
+private fun ShowDetailsContent(
+    show: ShowDetails,
+    entry: LibraryEntryState?,
+    viewModel: ShowDetailsViewModel,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -56,7 +66,7 @@ private fun ShowDetailsContent(show: ShowDetails, modifier: Modifier = Modifier)
         DetailsHeader(
             title = show.title,
             originalTitle = show.originalTitle,
-            posterPath = show.posterPath,
+            posterModel = posterModel(entry, show.posterPath),
             metaLines = listOfNotNull(
                 listOfNotNull(stringResource(R.string.media_show), show.year?.toString()).joinToString(" · "),
                 listOf(
@@ -66,6 +76,12 @@ private fun ShowDetailsContent(show: ShowDetails, modifier: Modifier = Modifier)
                 show.episodeRuntimeMinutes?.let { stringResource(R.string.episode_runtime, formatRuntime(it)) },
                 show.genres.joinToString(", "),
             ),
+        )
+        LibraryActions(
+            entry = entry,
+            onStatusSelected = viewModel::onStatusSelected,
+            onRemove = viewModel::onRemove,
+            onRatingChange = viewModel::onRatingChange,
         )
         OverviewSection(show.overview)
         if (show.seasons.isNotEmpty()) {

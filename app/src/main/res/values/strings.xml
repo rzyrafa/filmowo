@@ -40,7 +40,38 @@
     <string name="runtime_hours">%1$d godz.</string>
     <string name="runtime_hours_minutes">%1$d godz. %2$d min</string>
 
-    <!-- Ekrany tymczasowe -->
+    <!-- Biblioteka i statusy -->
+    <string name="status_planned">Do obejrzenia</string>
+    <string name="status_watched">Obejrzane</string>
+    <string name="status_currently_watching">Oglądasz ten serial</string>
+    <string name="library_tab_watching">Oglądam</string>
+    <string name="library_tab_planned">Do obejrzenia</string>
+    <string name="library_tab_watched">Obejrzane</string>
+    <string name="library_tab_with_count">%1$s (%2$d)</string>
+    <string name="library_empty_watching">Nie oglądasz teraz żadnego serialu</string>
+    <string name="library_empty_planned">Nie masz nic do obejrzenia. Dodaj tytuły z wyszukiwarki.</string>
+    <string name="library_empty_watched">Nie masz jeszcze obejrzanych tytułów</string>
+    <string name="sort_title">Sortuj</string>
+    <string name="sort_recent">Ostatnio zmienione</string>
+    <string name="sort_title_az">Tytuł (A–Z)</string>
+    <string name="sort_year">Rok (najnowsze)</string>
+    <string name="sort_rating">Ocena (najwyższa)</string>
+    <string name="remove_title">Usunąć z biblioteki?</string>
+    <string name="remove_message">Pozycja zniknie z biblioteki razem z Twoją oceną.</string>
+    <string name="action_remove">Usuń</string>
+    <string name="action_cancel">Anuluj</string>
+
+    <!-- Ocena -->
+    <string name="rating_requires_library">Dodaj do biblioteki, aby ocenić</string>
+    <string name="rating_none">Brak oceny</string>
+    <string name="rating_value">Twoja ocena: %1$d/10</string>
+    <string name="rating_short">%1$d/10</string>
+    <string name="rating_add">Oceń</string>
+    <string name="rating_change">Zmień</string>
+    <string name="rating_remove">Usuń ocenę</string>
+    <string name="rating_dialog_title">Twoja ocena</string>
+
+    <!-- Liczebniki -->
     <plurals name="seasons_count">
         <item quantity="one">%d sezon</item>
         <item quantity="few">%d sezony</item>
@@ -54,7 +85,7 @@
         <item quantity="other">%d odcinka</item>
     </plurals>
 
-    <string name="library_placeholder">Twoja biblioteka jest pusta</string>
+    <!-- Ekrany tymczasowe -->
     <string name="stats_placeholder">Tu pojawią się Twoje statystyki</string>
 
     <!-- O aplikacji -->

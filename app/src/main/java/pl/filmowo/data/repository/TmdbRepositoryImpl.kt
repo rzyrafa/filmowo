@@ -13,7 +13,7 @@ import pl.filmowo.data.remote.dto.SearchItemDto
 import pl.filmowo.data.remote.dto.TvDetailsDto
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
-import pl.filmowo.domain.model.SearchFilter
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
 import pl.filmowo.domain.model.SeasonSummary
@@ -28,17 +28,17 @@ class TmdbRepositoryImpl @Inject constructor(
     @Named(NetworkModule.TMDB_API_KEY) private val apiKey: String,
 ) : TmdbRepository {
 
-    override suspend fun search(query: String, filter: SearchFilter, page: Int): AppResult<SearchPage> =
+    override suspend fun search(query: String, filter: MediaFilter, page: Int): AppResult<SearchPage> =
         call {
             val response = when (filter) {
-                SearchFilter.ALL -> api.searchMulti(query, page, LANGUAGE_PRIMARY)
-                SearchFilter.MOVIES -> api.searchMovies(query, page, LANGUAGE_PRIMARY)
-                SearchFilter.SHOWS -> api.searchTv(query, page, LANGUAGE_PRIMARY)
+                MediaFilter.ALL -> api.searchMulti(query, page, LANGUAGE_PRIMARY)
+                MediaFilter.MOVIES -> api.searchMovies(query, page, LANGUAGE_PRIMARY)
+                MediaFilter.SHOWS -> api.searchTv(query, page, LANGUAGE_PRIMARY)
             }
             val defaultType = when (filter) {
-                SearchFilter.MOVIES -> MediaType.MOVIE
-                SearchFilter.SHOWS -> MediaType.TV
-                SearchFilter.ALL -> null
+                MediaFilter.MOVIES -> MediaType.MOVIE
+                MediaFilter.SHOWS -> MediaType.TV
+                MediaFilter.ALL -> null
             }
             SearchPage(
                 items = response.results.mapNotNull { it.toDomain(defaultType) },

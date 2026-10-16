@@ -18,7 +18,7 @@ import pl.filmowo.core.network.AppResult
 import pl.filmowo.data.remote.TmdbApi
 import pl.filmowo.data.remote.TmdbApiKeyInterceptor
 import pl.filmowo.domain.model.MediaType
-import pl.filmowo.domain.model.SearchFilter
+import pl.filmowo.domain.model.MediaFilter
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -63,7 +63,7 @@ class TmdbRepositoryImplTest {
             """.trimIndent(),
         )
 
-        val result = repository().search("inc", SearchFilter.ALL, 1) as AppResult.Success
+        val result = repository().search("inc", MediaFilter.ALL, 1) as AppResult.Success
         assertEquals(listOf(1, 2), result.data.items.map { it.id })
         assertEquals(MediaType.TV, result.data.items[1].mediaType)
         assertEquals(2010, result.data.items[0].year)
@@ -80,7 +80,7 @@ class TmdbRepositoryImplTest {
     fun `movie filter uses movie endpoint and sets media type`() = runTest {
         enqueueJson("""{"page":1,"total_pages":1,"results":[{"id":5,"title":"Matrix"}]}""")
 
-        val result = repository().search("matrix", SearchFilter.MOVIES, 1) as AppResult.Success
+        val result = repository().search("matrix", MediaFilter.MOVIES, 1) as AppResult.Success
         assertEquals(MediaType.MOVIE, result.data.items.single().mediaType)
         assertNull(result.data.items.single().year)
         assertEquals("/3/search/movie", server.takeRequest().requestUrl!!.encodedPath)

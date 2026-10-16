@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,13 +42,13 @@ import kotlinx.coroutines.flow.filter
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
+import pl.filmowo.core.ui.components.MediaFilterRow
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.Poster
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.data.remote.TmdbImages
 import pl.filmowo.domain.model.MediaType
-import pl.filmowo.domain.model.SearchFilter
 import pl.filmowo.domain.model.SearchResult
 
 @Composable
@@ -64,7 +63,7 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             SearchField(query = state.query, onQueryChange = viewModel::onQueryChange)
-            FilterRow(selected = state.filter, onSelect = viewModel::onFilterChange)
+            MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterChange)
             SearchResults(
                 results = state.results,
                 onRetry = viewModel::retry,
@@ -97,32 +96,6 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
     )
-}
-
-@Composable
-private fun FilterRow(selected: SearchFilter, onSelect: (SearchFilter) -> Unit) {
-    Row(
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SearchFilter.entries.forEach { filter ->
-            FilterChip(
-                selected = filter == selected,
-                onClick = { onSelect(filter) },
-                label = {
-                    Text(
-                        stringResource(
-                            when (filter) {
-                                SearchFilter.ALL -> R.string.filter_all
-                                SearchFilter.MOVIES -> R.string.filter_movies
-                                SearchFilter.SHOWS -> R.string.filter_shows
-                            },
-                        ),
-                    )
-                },
-            )
-        }
-    }
 }
 
 @Composable
@@ -197,7 +170,7 @@ private fun SearchResultRow(item: SearchResult, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Poster(
-            url = TmdbImages.posterSmall(item.posterPath),
+            model = TmdbImages.posterSmall(item.posterPath),
             contentDescription = null,
             modifier = Modifier.width(64.dp),
         )

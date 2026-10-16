@@ -60,15 +60,15 @@ fun FilmowoAppRoot() {
             composable<SearchRoute> {
                 SearchScreen(
                     onOpenAbout = openAbout,
-                    onOpenResult = { result ->
-                        when (result.mediaType) {
-                            MediaType.MOVIE -> navController.navigate(MovieDetailsRoute(result.id))
-                            MediaType.TV -> navController.navigate(ShowDetailsRoute(result.id))
-                        }
-                    },
+                    onOpenResult = { navController.navigateToDetails(it.id, it.mediaType) },
                 )
             }
-            composable<LibraryRoute> { LibraryScreen(onOpenAbout = openAbout) }
+            composable<LibraryRoute> {
+                LibraryScreen(
+                    onOpenAbout = openAbout,
+                    onOpenItem = { id, type -> navController.navigateToDetails(id, type) },
+                )
+            }
             composable<StatsRoute> { StatsScreen(onOpenAbout = openAbout) }
             composable<AboutRoute> { AboutScreen(onBack = navController::navigateUp) }
             composable<MovieDetailsRoute> { MovieDetailsScreen(onBack = navController::navigateUp) }
@@ -103,5 +103,12 @@ private fun NavHostController.navigateToTopLevel(destination: TopLevelDestinatio
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+private fun NavHostController.navigateToDetails(id: Int, type: MediaType) {
+    when (type) {
+        MediaType.MOVIE -> navigate(MovieDetailsRoute(id))
+        MediaType.TV -> navigate(ShowDetailsRoute(id))
     }
 }

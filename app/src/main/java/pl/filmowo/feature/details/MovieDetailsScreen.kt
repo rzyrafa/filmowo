@@ -27,19 +27,29 @@ fun MovieDetailsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
-        topBar = { DetailsTopBar((state as? UiState.Success)?.data?.title, onBack) },
+        topBar = { DetailsTopBar((state.content as? UiState.Success)?.data?.title, onBack) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        when (val s = state) {
+        when (val content = state.content) {
             UiState.Loading -> LoadingContent(modifier)
-            is UiState.Error -> ErrorContent(s.error, viewModel::retry, modifier)
-            is UiState.Success -> MovieDetailsContent(s.data, modifier)
+            is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
+            is UiState.Success -> MovieDetailsContent(
+                movie = content.data,
+                entry = state.library,
+                viewModel = viewModel,
+                modifier = modifier,
+            )
         }
     }
 }
 
 @Composable
-private fun MovieDetailsContent(movie: MovieDetails, modifier: Modifier = Modifier) {
+private fun MovieDetailsContent(
+    movie: MovieDetails,
+    entry: LibraryEntryState?,
+    viewModel: MovieDetailsViewModel,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -50,12 +60,18 @@ private fun MovieDetailsContent(movie: MovieDetails, modifier: Modifier = Modifi
         DetailsHeader(
             title = movie.title,
             originalTitle = movie.originalTitle,
-            posterPath = movie.posterPath,
+            posterModel = posterModel(entry, movie.posterPath),
             metaLines = listOfNotNull(
                 listOfNotNull(stringResource(R.string.media_movie), movie.year?.toString()).joinToString(" · "),
                 movie.runtimeMinutes?.let { formatRuntime(it) },
                 movie.genres.joinToString(", "),
             ),
+        )
+        LibraryActions(
+            entry = entry,
+            onStatusSelected = viewModel::onStatusSelected,
+            onRemove = viewModel::onRemove,
+            onRatingChange = viewModel::onRatingChange,
         )
         OverviewSection(movie.overview)
     }

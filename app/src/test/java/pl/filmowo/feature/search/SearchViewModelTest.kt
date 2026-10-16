@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
-import pl.filmowo.domain.model.SearchFilter
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.testutil.FakeConnectivityObserver
 import pl.filmowo.testutil.FakeTmdbRepository
@@ -54,7 +54,7 @@ class SearchViewModelTest {
         advanceTimeBy(SearchViewModel.DEBOUNCE_MS + 1)
         runCurrent()
 
-        assertEquals(listOf(FakeTmdbRepository.SearchCall("incepcja", SearchFilter.ALL, 1)), repository.searchCalls)
+        assertEquals(listOf(FakeTmdbRepository.SearchCall("incepcja", MediaFilter.ALL, 1)), repository.searchCalls)
         val results = viewModel.state.value.results as SearchResultsState.Success
         assertEquals(1, results.items.size)
     }
@@ -98,9 +98,9 @@ class SearchViewModelTest {
     fun `changing filter re-runs search with that filter`() = runTest(mainRule.dispatcher) {
         val viewModel = createViewModel()
         typeAndWait(viewModel, "dark")
-        viewModel.onFilterChange(SearchFilter.SHOWS)
+        viewModel.onFilterChange(MediaFilter.SHOWS)
         runCurrent()
-        assertEquals(SearchFilter.SHOWS, repository.searchCalls.last().filter)
+        assertEquals(MediaFilter.SHOWS, repository.searchCalls.last().filter)
     }
 
     @Test
