@@ -18,6 +18,7 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.domain.model.MovieDetails
 
 @Composable
@@ -30,15 +31,17 @@ fun MovieDetailsScreen(
         topBar = { DetailsTopBar((state.content as? UiState.Success)?.data?.title, onBack) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        when (val content = state.content) {
-            UiState.Loading -> LoadingContent(modifier)
-            is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
-            is UiState.Success -> MovieDetailsContent(
-                movie = content.data,
-                entry = state.library,
-                viewModel = viewModel,
-                modifier = modifier,
-            )
+        StateTransition(state.content, contentKey = { it::class }) { content ->
+            when (content) {
+                UiState.Loading -> LoadingContent(modifier)
+                is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
+                is UiState.Success -> MovieDetailsContent(
+                    movie = content.data,
+                    entry = state.library,
+                    viewModel = viewModel,
+                    modifier = modifier,
+                )
+            }
         }
     }
 }

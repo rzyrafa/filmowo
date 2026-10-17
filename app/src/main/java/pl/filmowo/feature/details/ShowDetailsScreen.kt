@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -35,12 +36,14 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.SegmentedProgress
 import pl.filmowo.core.ui.components.WatchedCheck
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.core.ui.components.progressLabel
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
+import pl.filmowo.core.ui.theme.pressScale
 import pl.filmowo.domain.model.SeasonProgress
 import pl.filmowo.domain.model.ShowDetails
 
@@ -70,17 +73,19 @@ fun ShowDetailsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        when (val content = state.content) {
-            UiState.Loading -> LoadingContent(modifier)
-            is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
-            is UiState.Success -> ShowDetailsContent(
-                show = content.data,
-                entry = state.library,
-                tracking = tracking,
-                viewModel = viewModel,
-                onOpenSeason = { number, title -> onOpenSeason(content.data.id, number, title) },
-                modifier = modifier,
-            )
+        StateTransition(state.content, contentKey = { it::class }) { content ->
+            when (content) {
+                UiState.Loading -> LoadingContent(modifier)
+                is UiState.Error -> ErrorContent(content.error, viewModel::retry, modifier)
+                is UiState.Success -> ShowDetailsContent(
+                    show = content.data,
+                    entry = state.library,
+                    tracking = tracking,
+                    viewModel = viewModel,
+                    onOpenSeason = { number, title -> onOpenSeason(content.data.id, number, title) },
+                    modifier = modifier,
+                )
+            }
         }
     }
 }
@@ -196,12 +201,14 @@ private fun SeasonCard(
 ) {
     val colors = FilmowoTheme.colors
     val progress = season.progress
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .pressScale(interaction, pressedScale = 0.98f)
             .clip(FilmowoRadius.Lg)
             .background(colors.surfaceRaised)
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,

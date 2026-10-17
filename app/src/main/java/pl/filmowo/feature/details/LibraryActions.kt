@@ -2,6 +2,8 @@ package pl.filmowo.feature.details
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -38,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.Badge
+import pl.filmowo.core.ui.theme.FilmowoMotion
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.core.ui.theme.ToneName
@@ -57,7 +59,11 @@ internal fun LibraryActions(
     var confirmRemove by rememberSaveable { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // animateContentSize: znacznik „Oglądasz ten serial” pojawia się bez skoku układu.
+    Column(
+        modifier = Modifier.animateContentSize(FilmowoMotion.move()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatusButton(
                 selected = entry?.status == WatchStatus.PLANNED,
@@ -156,18 +162,20 @@ private fun RowScope.StatusButton(
         Spacer(Modifier.width(ButtonDefaults.IconSpacing))
         Text(stringResource(labelRes))
     }
+    // Jeden przycisk, którego kolory płynnie przechodzą między stanem wybranym (ink) a zwykłym.
     val colors = FilmowoTheme.colors
-    if (selected) {
-        Button(onClick = onClick, modifier = Modifier.weight(1f).height(48.dp), content = content)
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            modifier = Modifier.weight(1f).height(48.dp),
-            colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surfaceRaised, contentColor = colors.ink),
-            border = BorderStroke(1.dp, colors.line),
-            content = content,
-        )
-    }
+    val container by animateColorAsState(if (selected) colors.ink else colors.surfaceRaised, FilmowoMotion.color(), label = "statusBg")
+    val contentColor by animateColorAsState(if (selected) colors.onInk else colors.ink, FilmowoMotion.color(), label = "statusFg")
+    val border by animateColorAsState(if (selected) colors.ink else colors.line, FilmowoMotion.color(), label = "statusBorder")
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .weight(1f)
+            .height(48.dp),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = container, contentColor = contentColor),
+        border = BorderStroke(1.dp, border),
+        content = content,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

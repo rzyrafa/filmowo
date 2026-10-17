@@ -33,6 +33,7 @@ import pl.filmowo.core.ui.components.MediaTile
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.SegmentedTab
 import pl.filmowo.core.ui.components.SegmentedTabs
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.TileProgress
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.components.progressLabel
@@ -65,22 +66,35 @@ fun LibraryScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterSelected)
-            when {
-                state.isLoading -> LoadingContent()
-                state.entries.isEmpty() -> PlaceholderContent(
-                    iconRes = state.tab.emptyIconRes,
-                    text = stringResource(state.tab.emptyRes),
-                    tone = state.tab.toneName,
-                )
-                else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    items(state.entries, key = { "${it.item.mediaType}-${it.item.tmdbId}" }) { entry ->
-                        LibraryTile(entry, onClick = { onOpenItem(entry.item.tmdbId, entry.item.mediaType) })
+            StateTransition(
+                targetState = when {
+                    state.isLoading -> LibraryContent.LOADING
+                    state.entries.isEmpty() -> LibraryContent.EMPTY
+                    else -> LibraryContent.GRID
+                },
+            ) { content ->
+                when {
+                    content == LibraryContent.LOADING -> LoadingContent()
+                    content == LibraryContent.EMPTY -> PlaceholderContent(
+                        iconRes = state.tab.emptyIconRes,
+                        text = stringResource(state.tab.emptyRes),
+                        tone = state.tab.toneName,
+                    )
+                    else -> LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 150.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        items(state.entries, key = { "${it.item.mediaType}-${it.item.tmdbId}" }) { entry ->
+                            LibraryTile(
+                                entry = entry,
+                                onClick = { onOpenItem(entry.item.tmdbId, entry.item.mediaType) },
+                                // Sortowanie i filtrowanie przesuwają kafelki płynnie na nowe miejsca.
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
                     }
                 }
             }
@@ -113,7 +127,7 @@ private fun SortMenu(current: LibrarySort, onSelect: (LibrarySort) -> Unit) {
 }
 
 @Composable
-private fun LibraryTile(entry: LibraryEntry, onClick: () -> Unit) {
+private fun LibraryTile(entry: LibraryEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val item = entry.item
     val progress = entry.progress
     MediaTile(
@@ -125,8 +139,11 @@ private fun LibraryTile(entry: LibraryEntry, onClick: () -> Unit) {
         rating = item.rating,
         status = item.status,
         progress = progress?.let { TileProgress(it.watchedCount, it.airedCount, progressLabel(it)) },
+        modifier = modifier,
     )
 }
+
+private enum class LibraryContent { LOADING, EMPTY, GRID }
 
 private val LibraryTab.labelRes: Int
     get() = when (this) {

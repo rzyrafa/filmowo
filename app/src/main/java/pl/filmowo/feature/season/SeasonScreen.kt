@@ -1,5 +1,6 @@
 package pl.filmowo.feature.season
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,9 @@ import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.SegmentedProgress
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.WatchedCheck
+import pl.filmowo.core.ui.theme.FilmowoMotion
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.feature.details.DetailsTopBar
@@ -50,19 +53,21 @@ fun SeasonScreen(
         topBar = { DetailsTopBar(title, onBack) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        when (val episodes = state.episodes) {
-            UiState.Loading -> LoadingContent(modifier)
-            is UiState.Error -> ErrorContent(episodes.error, viewModel::retry, modifier)
-            is UiState.Success -> if (episodes.data.isEmpty()) {
-                PlaceholderContent(R.drawable.ic_movie, stringResource(R.string.season_no_episodes), modifier)
-            } else {
-                EpisodeList(
-                    rows = episodes.data,
-                    state = state,
-                    onEpisodeWatchedChange = viewModel::onEpisodeWatchedChange,
-                    onSeasonWatchedChange = viewModel::onSeasonWatchedChange,
-                    modifier = modifier,
-                )
+        StateTransition(state.episodes, contentKey = { it::class }) { episodes ->
+            when (episodes) {
+                UiState.Loading -> LoadingContent(modifier)
+                is UiState.Error -> ErrorContent(episodes.error, viewModel::retry, modifier)
+                is UiState.Success -> if (episodes.data.isEmpty()) {
+                    PlaceholderContent(R.drawable.ic_movie, stringResource(R.string.season_no_episodes), modifier)
+                } else {
+                    EpisodeList(
+                        rows = episodes.data,
+                        state = state,
+                        onEpisodeWatchedChange = viewModel::onEpisodeWatchedChange,
+                        onSeasonWatchedChange = viewModel::onSeasonWatchedChange,
+                        modifier = modifier,
+                    )
+                }
             }
         }
     }
@@ -86,6 +91,7 @@ private fun EpisodeList(
         }
         items(rows, key = { it.info.episodeNumber }) { row ->
             EpisodeItem(
+                modifier = Modifier.animateItem(),
                 row = row,
                 enabled = state.isTracked && row.isAired,
                 onWatchedChange = { onEpisodeWatchedChange(row.info.episodeNumber, it) },
@@ -146,10 +152,12 @@ private fun EpisodeItem(
     row: EpisodeRow,
     enabled: Boolean,
     onWatchedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colors = FilmowoTheme.colors
+    val titleColor by animateColorAsState(if (row.isWatched) colors.inkMuted else colors.ink, FilmowoMotion.color(), label = "episodeTitle")
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(FilmowoRadius.Md)
             .background(colors.surfaceRaised)
@@ -164,7 +172,7 @@ private fun EpisodeItem(
                 text = row.info.name?.let { stringResource(R.string.episode_title, number, it) }
                     ?: stringResource(R.string.episode_number, number),
                 style = MaterialTheme.typography.titleSmall,
-                color = if (row.isWatched) colors.inkMuted else colors.ink,
+                color = titleColor,
             )
             val meta = listOfNotNull(
                 row.info.airDate?.let {

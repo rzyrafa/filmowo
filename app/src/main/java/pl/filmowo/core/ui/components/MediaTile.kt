@@ -1,6 +1,7 @@
 package pl.filmowo.core.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -17,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import pl.filmowo.R
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
+import pl.filmowo.core.ui.theme.pressScale
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.WatchStatus
 
@@ -39,10 +42,12 @@ fun MediaTile(
     status: WatchStatus? = null,
     progress: TileProgress? = null,
 ) {
+    val interaction = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick, role = Role.Button),
+            .pressScale(interaction)
+            .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Poster(

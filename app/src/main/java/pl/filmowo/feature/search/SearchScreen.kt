@@ -49,6 +49,7 @@ import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.MediaFilterRow
 import pl.filmowo.core.ui.components.MediaTile
 import pl.filmowo.core.ui.components.PlaceholderContent
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.core.ui.theme.FilmowoRadius
@@ -132,12 +133,14 @@ private fun SearchResults(
     onLoadMore: () -> Unit,
     onOpenResult: (SearchResult) -> Unit,
 ) {
-    when (results) {
-        SearchResultsState.Idle -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_placeholder), tone = ToneName.SKY)
-        SearchResultsState.Loading -> LoadingContent()
-        SearchResultsState.Empty -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_empty), tone = ToneName.NEUTRAL)
-        is SearchResultsState.Error -> ErrorContent(results.error, onRetry)
-        is SearchResultsState.Success -> ResultList(results, onLoadMore, onOpenResult)
+    StateTransition(results, contentKey = { it::class }) { results ->
+        when (results) {
+            SearchResultsState.Idle -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_placeholder), tone = ToneName.SKY)
+            SearchResultsState.Loading -> LoadingContent()
+            SearchResultsState.Empty -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_empty), tone = ToneName.NEUTRAL)
+            is SearchResultsState.Error -> ErrorContent(results.error, onRetry)
+            is SearchResultsState.Success -> ResultList(results, onLoadMore, onOpenResult)
+        }
     }
 }
 
@@ -170,6 +173,7 @@ private fun ResultList(
     ) {
         items(results.items, key = { "${it.mediaType}-${it.id}" }) { item ->
             MediaTile(
+                modifier = Modifier.animateItem(),
                 title = item.title,
                 mediaType = item.mediaType,
                 year = item.year,

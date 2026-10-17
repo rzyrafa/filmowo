@@ -34,10 +34,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.PlaceholderContent
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.core.ui.theme.ToneName
+import pl.filmowo.core.ui.theme.staggeredAppear
 import pl.filmowo.domain.model.WatchStats
 import pl.filmowo.domain.model.splitDuration
 
@@ -51,16 +53,21 @@ fun StatsScreen(
         topBar = { TopLevelTopBar(stringResource(R.string.nav_stats), onOpenAbout) },
     ) { padding ->
         val modifier = Modifier.padding(padding)
-        val stats = state.stats
-        when {
-            state.isLoading -> LoadingContent(modifier)
-            stats == null || stats.isEmpty -> PlaceholderContent(
-                iconRes = R.drawable.ic_bar_chart,
-                text = stringResource(R.string.stats_empty),
-                tone = ToneName.LILAC,
-                modifier = modifier,
-            )
-            else -> StatsContent(stats, modifier)
+        StateTransition(
+            targetState = state,
+            contentKey = { it.isLoading to (it.stats == null || it.stats.isEmpty) },
+        ) { current ->
+            val stats = current.stats
+            when {
+                current.isLoading -> LoadingContent(modifier)
+                stats == null || stats.isEmpty -> PlaceholderContent(
+                    iconRes = R.drawable.ic_bar_chart,
+                    text = stringResource(R.string.stats_empty),
+                    tone = ToneName.LILAC,
+                    modifier = modifier,
+                )
+                else -> StatsContent(stats, modifier)
+            }
         }
     }
 }
@@ -86,7 +93,9 @@ private fun StatsContent(stats: WatchStats, modifier: Modifier = Modifier) {
             muted = colors.onInverseMuted,
             iconContainer = colors.brand,
             iconContent = colors.onBrand,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .staggeredAppear(0),
         )
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
@@ -102,7 +111,8 @@ private fun StatsContent(stats: WatchStats, modifier: Modifier = Modifier) {
                 muted = colors.onPeach,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .staggeredAppear(1),
             )
             StatTile(
                 iconRes = R.drawable.ic_video_library,
@@ -114,7 +124,8 @@ private fun StatsContent(stats: WatchStats, modifier: Modifier = Modifier) {
                 muted = colors.onSky,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .staggeredAppear(2),
             )
         }
     }

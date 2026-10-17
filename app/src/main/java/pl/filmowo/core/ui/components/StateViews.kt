@@ -1,6 +1,10 @@
 package pl.filmowo.core.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -12,8 +16,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import pl.filmowo.R
 import pl.filmowo.core.network.AppError
+import pl.filmowo.core.ui.theme.FilmowoMotion
 import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.core.ui.theme.ToneName
+
+/**
+ * Płynna zmiana stanu ekranu (ładowanie → treść → błąd): stary stan szybko gaśnie,
+ * nowy pojawia się z lekkim opóźnieniem. [contentKey] decyduje, co jest „nowym” stanem –
+ * zwykle klasa stanu, żeby odświeżenie danych w tym samym stanie nie migało.
+ */
+@Composable
+fun <T> StateTransition(
+    targetState: T,
+    modifier: Modifier = Modifier,
+    contentKey: (T) -> Any? = { it },
+    content: @Composable (T) -> Unit,
+) {
+    AnimatedContent(
+        targetState = targetState,
+        modifier = modifier,
+        contentKey = contentKey,
+        transitionSpec = {
+            fadeIn(FilmowoMotion.fade(FilmowoMotion.MEDIUM, delay = 60)) togetherWith fadeOut(FilmowoMotion.fade(FilmowoMotion.SHORT))
+        },
+        label = "stateTransition",
+    ) { state -> content(state) }
+}
 
 @Composable
 fun LoadingContent(modifier: Modifier = Modifier) {
