@@ -36,6 +36,20 @@ data class EpisodeProgressInput(
 
 data class EpisodeRef(val seasonNumber: Int, val episodeNumber: Int)
 
+/** Odcinek serialu z biblioteki z datą premiery – do listy „Premiery” i powiadomień. */
+data class UpcomingEpisode(
+    val showId: Int,
+    val showTitle: String,
+    val posterPath: String?,
+    val localPosterFile: String?,
+    val seasonNumber: Int,
+    val episodeNumber: Int,
+    val name: String?,
+    /** Data premiery w formacie ISO (yyyy-MM-dd). */
+    val airDate: String,
+    val isWatched: Boolean,
+)
+
 /**
  * Postęp oglądania serialu. Liczą się tylko wyemitowane odcinki
  * zwykłych sezonów (sezon 0 – odcinki specjalne – jest pomijany).
@@ -45,6 +59,8 @@ data class ShowProgress(
     val airedCount: Int,
     /** Ostatni (najdalszy) obejrzany odcinek zwykłego sezonu. */
     val lastWatched: EpisodeRef?,
+    /** Następny wyemitowany, nieobejrzany odcinek – po ostatnim obejrzanym, a gdy go nie ma, pierwszy pominięty. */
+    val nextEpisode: EpisodeRef? = null,
 ) {
     val percent: Int get() = if (airedCount == 0) 0 else (watchedCount * 100 / airedCount).coerceAtMost(100)
     val isComplete: Boolean get() = airedCount > 0 && watchedCount >= airedCount
@@ -73,13 +89,17 @@ fun isAired(airDate: String?, today: String): Boolean = airDate != null && airDa
 
 fun computeShowProgress(episodes: List<EpisodeProgressInput>, today: String): ShowProgress {
     val regularAired = episodes.filter { it.seasonNumber > 0 && isAired(it.airDate, today) }
+    val order = compareBy<EpisodeProgressInput>({ it.seasonNumber }, { it.episodeNumber })
     val lastWatched = episodes
         .filter { it.seasonNumber > 0 && it.isWatched }
-        .maxWithOrNull(compareBy({ it.seasonNumber }, { it.episodeNumber }))
+        .maxWithOrNull(order)
+    val unwatched = regularAired.filterNot { it.isWatched }.sortedWith(order)
+    val next = lastWatched?.let { last -> unwatched.firstOrNull { order.compare(it, last) > 0 } } ?: unwatched.firstOrNull()
     return ShowProgress(
         watchedCount = regularAired.count { it.isWatched },
         airedCount = regularAired.size,
         lastWatched = lastWatched?.let { EpisodeRef(it.seasonNumber, it.episodeNumber) },
+        nextEpisode = next?.let { EpisodeRef(it.seasonNumber, it.episodeNumber) },
     )
 }
 

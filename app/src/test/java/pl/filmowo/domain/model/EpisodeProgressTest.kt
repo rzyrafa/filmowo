@@ -14,6 +14,25 @@ class EpisodeProgressTest {
         EpisodeProgressInput(season, episode, airDate, watched)
 
     @Test
+    fun `next episode follows the last watched one`() {
+        val progress = computeShowProgress(
+            listOf(ep(1, 1, watched = true), ep(1, 2), ep(1, 3, watched = true), ep(2, 1), ep(2, 2, airDate = "2027-01-01")),
+            today,
+        )
+        // S1E2 pominięto, ale „następny” to odcinek po ostatnim obejrzanym (S1E3).
+        assertEquals(EpisodeRef(2, 1), progress.nextEpisode)
+    }
+
+    @Test
+    fun `next episode falls back to first skipped one and is null when all aired are watched`() {
+        val skipped = computeShowProgress(listOf(ep(1, 1), ep(1, 2, watched = true)), today)
+        assertEquals(EpisodeRef(1, 1), skipped.nextEpisode)
+
+        val done = computeShowProgress(listOf(ep(1, 1, watched = true), ep(1, 2, airDate = "2027-01-01")), today)
+        assertNull(done.nextEpisode)
+    }
+
+    @Test
     fun `progress counts aired regular episodes and finds last watched`() {
         val progress = computeShowProgress(
             listOf(

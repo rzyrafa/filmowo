@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -68,6 +69,7 @@ import pl.filmowo.feature.library.LibraryScreen
 import pl.filmowo.feature.search.SearchScreen
 import pl.filmowo.feature.season.SeasonScreen
 import pl.filmowo.feature.stats.StatsScreen
+import pl.filmowo.feature.upcoming.UpcomingScreen
 
 @Composable
 fun FilmowoAppRoot() {
@@ -118,12 +120,22 @@ fun FilmowoAppRoot() {
                     onOpenItem = { id, type -> navController.navigateToDetails(id, type) },
                 )
             }
+            composable<UpcomingRoute> {
+                UpcomingScreen(
+                    onOpenAbout = openAbout,
+                    onOpenItem = { id, type -> navController.navigateToDetails(id, type) },
+                )
+            }
             composable<StatsRoute> { StatsScreen(onOpenAbout = openAbout) }
             composable<AboutRoute> { AboutScreen(onBack = navController::navigateUp) }
-            composable<MovieDetailsRoute> { MovieDetailsScreen(onBack = navController::navigateUp) }
+            val openDetails = { id: Int, type: MediaType -> navController.navigateToDetails(id, type) }
+            composable<MovieDetailsRoute> {
+                MovieDetailsScreen(onBack = navController::navigateUp, onOpenDetails = openDetails)
+            }
             composable<ShowDetailsRoute> {
                 ShowDetailsScreen(
                     onBack = navController::navigateUp,
+                    onOpenDetails = openDetails,
                     onOpenSeason = { showId, season, title -> navController.navigate(SeasonRoute(showId, season, title)) },
                 )
             }
@@ -201,7 +213,8 @@ private fun FilmowoBottomBar(
         Box(
             modifier = Modifier
                 .padding(top = 6.dp)
-                .offset(x = pillOffset)
+                // Przesunięcie w fazie układu – animacja nie wymusza ponownej kompozycji co klatkę.
+                .offset { IntOffset(pillOffset.roundToPx(), 0) }
                 .size(width = NavPillWidth, height = 32.dp)
                 .background(colors.brand, FilmowoRadius.Pill),
         )

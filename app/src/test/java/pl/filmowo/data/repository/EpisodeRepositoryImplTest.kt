@@ -48,6 +48,36 @@ class EpisodeRepositoryImplTest {
 
     private suspend fun status() = libraryDao.get(SHOW_ID, MediaType.TV)?.status
 
+    @Test
+    fun `reset progress unchecks every episode and plans the show`() = runTest {
+        addShow(WatchStatus.WATCHING)
+        episodeDao.upsertEpisodes(listOf(episodeEntity(1, 1, watchedAt = 1L, showId = SHOW_ID), episodeEntity(1, 2, showId = SHOW_ID)))
+        repository().resetProgress(SHOW_ID)
+        assertTrue(episodeDao.episodes.value.all { it.watchedAt == null })
+        assertEquals(WatchStatus.PLANNED, status())
+    }
+
+    @Test
+    fun `sync all refreshes every show and finds new episodes of a watched show`() = runTest {
+        addShow(WatchStatus.WATCHED)
+        givenTmdbShow()
+        // Wcześniej zapisany był tylko sezon 1, w całości obejrzany.
+        episodeDao.upsertEpisodes((1..3).map { episodeEntity(1, it, watchedAt = 1L, showId = SHOW_ID) })
+
+        assertEquals(AppResult.Success(Unit), repository().syncAll())
+        // Sezon 2 ma wyemitowany, nieobejrzany odcinek – serial wraca do „Oglądam”.
+        assertEquals(WatchStatus.WATCHING, status())
+    }
+
+    @Test
+    fun `sync all stops on configuration errors`() = runTest {
+        addShow(WatchStatus.WATCHING, id = 1)
+        addShow(WatchStatus.WATCHING, id = 2)
+        tmdb.showResult = AppResult.Failure(AppError.UNAUTHORIZED)
+        assertEquals(AppResult.Failure(AppError.UNAUTHORIZED), repository().syncAll())
+        assertEquals(1, tmdb.showCalls)
+    }
+
     private fun givenTmdbShow() {
         tmdb.showResult = AppResult.Success(
             show(SHOW_ID).copy(

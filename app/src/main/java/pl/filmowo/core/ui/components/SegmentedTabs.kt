@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import pl.filmowo.core.ui.theme.FilmowoMotion
 import pl.filmowo.core.ui.theme.FilmowoRadius
@@ -69,7 +70,7 @@ fun SegmentedTabs(
         )
         Box(
             modifier = Modifier
-                .offset(x = indicatorOffset)
+                .offset { IntOffset(indicatorOffset.roundToPx(), 0) }
                 .width(tabWidth)
                 .height(40.dp)
                 .shadow(2.dp, FilmowoRadius.Pill)

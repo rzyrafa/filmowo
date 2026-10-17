@@ -6,8 +6,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import pl.filmowo.core.network.AndroidConnectivityObserver
 import pl.filmowo.core.network.ConnectivityObserver
+import pl.filmowo.data.backup.BackupRepository
+import pl.filmowo.data.backup.JsonBackupRepository
 import pl.filmowo.data.local.FilePosterStorage
 import pl.filmowo.data.local.PosterStorage
+import pl.filmowo.data.preferences.DataStoreUserPreferences
+import pl.filmowo.data.preferences.UserPreferencesRepository
 import pl.filmowo.data.repository.EpisodeRepository
 import pl.filmowo.data.repository.EpisodeRepositoryImpl
 import pl.filmowo.data.repository.LibraryRepository
@@ -16,6 +20,8 @@ import pl.filmowo.data.repository.StatsRepository
 import pl.filmowo.data.repository.StatsRepositoryImpl
 import pl.filmowo.data.repository.TmdbRepository
 import pl.filmowo.data.repository.TmdbRepositoryImpl
+import pl.filmowo.work.AndroidPremiereNotifier
+import pl.filmowo.work.PremiereNotifier
 import javax.inject.Singleton
 
 @Module
@@ -45,4 +51,15 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindConnectivityObserver(impl: AndroidConnectivityObserver): ConnectivityObserver
+
+    @Binds
+    @Singleton
+    abstract fun bindUserPreferences(impl: DataStoreUserPreferences): UserPreferencesRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBackupRepository(impl: JsonBackupRepository): BackupRepository
+
+    @Binds
+    abstract fun bindPremiereNotifier(impl: AndroidPremiereNotifier): PremiereNotifier
 }

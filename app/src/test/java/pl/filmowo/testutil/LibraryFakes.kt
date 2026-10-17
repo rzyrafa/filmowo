@@ -7,10 +7,12 @@ import kotlinx.coroutines.flow.update
 import pl.filmowo.data.local.LibraryDao
 import pl.filmowo.data.local.LibraryItemEntity
 import pl.filmowo.data.local.PosterStorage
-import pl.filmowo.data.local.WatchTotals
+import pl.filmowo.data.preferences.LibraryPreferences
+import pl.filmowo.data.preferences.UserPreferencesRepository
 import pl.filmowo.data.repository.LibraryRepository
 import pl.filmowo.domain.model.LibraryItem
 import pl.filmowo.domain.model.LibraryMetadata
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.WatchStatus
 
@@ -22,9 +24,18 @@ class FakeLibraryDao : LibraryDao {
 
     override fun observe(id: Int, type: MediaType): Flow<LibraryItemEntity?> = items.map { it[id to type] }
 
-    override fun observeTotals(type: MediaType, status: WatchStatus): Flow<WatchTotals> = items.map { map ->
-        val matching = map.values.filter { it.mediaType == type && it.status == status }
-        WatchTotals(matching.size, matching.sumOf { (it.runtimeMinutes ?: 0).toLong() })
+    override suspend fun getAll(): List<LibraryItemEntity> = items.value.values.toList()
+
+    override suspend fun getAllOfType(type: MediaType): List<LibraryItemEntity> = items.value.values.filter { it.mediaType == type }
+
+    override suspend fun upsertAll(items: List<LibraryItemEntity>) = items.forEach { upsert(it) }
+
+    override suspend fun setNote(id: Int, type: MediaType, note: String?, now: Long) {
+        items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(note = note, updatedAt = now)) } ?: map }
+    }
+
+    override suspend fun setRewatchCount(id: Int, type: MediaType, count: Int, now: Long) {
+        items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(rewatchCount = count, updatedAt = now)) } ?: map }
     }
 
     override suspend fun get(id: Int, type: MediaType): LibraryItemEntity? = items.value[id to type]
@@ -102,6 +113,20 @@ class FakeLibraryRepository : LibraryRepository {
         items.update { it - (id to type) }
     }
 
+    override suspend fun setNote(id: Int, type: MediaType, note: String?) {
+        items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(note = note)) } ?: map }
+    }
+
+    override suspend fun setRewatchCount(id: Int, type: MediaType, count: Int) {
+        items.update { map -> map[id to type]?.let { map + ((id to type) to it.copy(rewatchCount = count)) } ?: map }
+    }
+
+    var missingPosterDownloads = 0
+
+    override suspend fun downloadMissingPosters() {
+        missingPosterDownloads++
+    }
+
     fun put(item: LibraryItem) {
         items.update { it + ((item.tmdbId to item.mediaType) to item) }
     }
@@ -121,3 +146,20 @@ fun libraryItem(
     updatedAt: Long = 0,
     rating: Int? = null,
 ) = LibraryItem(metadata, null, status, rating, addedAt = updatedAt, updatedAt = updatedAt, watchedAt = null)
+
+class FakeUserPreferences : UserPreferencesRepository {
+    override val library = MutableStateFlow(LibraryPreferences())
+    override val notificationsEnabled = MutableStateFlow(true)
+    var lastNotified: String? = null
+
+    override suspend fun setLibrarySort(sort: String) = library.update { it.copy(sort = sort) }
+    override suspend fun setLibraryFilter(filter: MediaFilter) = library.update { it.copy(filter = filter) }
+    override suspend fun setNotificationsEnabled(enabled: Boolean) {
+        notificationsEnabled.value = enabled
+    }
+
+    override suspend fun lastNotifiedDate() = lastNotified
+    override suspend fun setLastNotifiedDate(date: String) {
+        lastNotified = date
+    }
+}

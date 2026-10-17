@@ -1,5 +1,6 @@
 package pl.filmowo.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import pl.filmowo.domain.model.LibraryItem
 import pl.filmowo.domain.model.LibraryMetadata
@@ -26,6 +27,10 @@ data class LibraryItemEntity(
     val addedAt: Long,
     val updatedAt: Long,
     val watchedAt: Long?,
+    /** Własna notatka użytkownika (v3). */
+    val note: String? = null,
+    /** Ile razy film obejrzano ponownie, poza pierwszym obejrzeniem (v3). */
+    @ColumnInfo(defaultValue = "0") val rewatchCount: Int = 0,
 )
 
 fun LibraryItemEntity.toDomain() = LibraryItem(
@@ -48,6 +53,8 @@ fun LibraryItemEntity.toDomain() = LibraryItem(
     addedAt = addedAt,
     updatedAt = updatedAt,
     watchedAt = watchedAt,
+    note = note,
+    rewatchCount = rewatchCount,
 )
 
 /** Nadpisuje dane z TMDB, zachowując dane użytkownika (status, ocena, daty, plakat). */

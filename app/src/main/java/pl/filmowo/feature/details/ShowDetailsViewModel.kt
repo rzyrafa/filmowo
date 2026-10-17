@@ -51,13 +51,17 @@ class ShowDetailsViewModel @Inject constructor(
     fetch = { tmdbRepository.showDetails(it) },
     toMetadata = { it.toLibraryMetadata() },
     fromLocal = { it.toShowDetails() },
+    fetchRecommendations = { tmdbRepository.recommendations(it, MediaType.TV) },
     afterStatusChange = { status ->
         val showId: Int = checkNotNull(savedStateHandle["id"])
-        if (status == WatchStatus.WATCHED) {
+        val result = if (status == WatchStatus.WATCHED) {
             episodeRepository.markShowWatched(showId)
-        } else if (!episodeRepository.hasEpisodes(showId)) {
-            episodeRepository.sync(showId)
+        } else {
+            // „Do obejrzenia” oznacza brak postępu – inaczej status i odhaczone odcinki by sobie przeczyły.
+            if (status == WatchStatus.PLANNED) episodeRepository.resetProgress(showId)
+            if (!episodeRepository.hasEpisodes(showId)) episodeRepository.sync(showId) else null
         }
+        (result as? AppResult.Failure)?.error
     },
 ) {
 

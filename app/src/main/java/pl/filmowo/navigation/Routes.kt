@@ -9,6 +9,9 @@ data object SearchRoute
 data object LibraryRoute
 
 @Serializable
+data object UpcomingRoute
+
+@Serializable
 data object StatsRoute
 
 @Serializable

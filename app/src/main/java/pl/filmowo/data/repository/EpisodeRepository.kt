@@ -5,6 +5,7 @@ import pl.filmowo.core.network.AppResult
 import pl.filmowo.domain.model.Episode
 import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.TrackedSeason
+import pl.filmowo.domain.model.UpcomingEpisode
 
 /**
  * Śledzenie odcinków seriali z biblioteki. Sezony i odcinki są zapisywane lokalnie,
@@ -20,6 +21,18 @@ interface EpisodeRepository {
 
     suspend fun hasEpisodes(showId: Int): Boolean
 
+    /** Odcinki seriali z biblioteki z premierą dziś lub później. */
+    fun observeUpcoming(): Flow<List<UpcomingEpisode>>
+
+    /** Odcinki seriali z biblioteki z premierą w dniu [date] (ISO). */
+    suspend fun getAiringOn(date: String): List<UpcomingEpisode>
+
+    /**
+     * Odświeża odcinki wszystkich seriali z biblioteki (praca w tle).
+     * Zwraca pierwszy błąd, jeśli któryś serial się nie zsynchronizował.
+     */
+    suspend fun syncAll(): AppResult<Unit>
+
     /** Pobiera z TMDB wszystkie sezony i odcinki serialu z biblioteki, zachowując obejrzane. */
     suspend fun sync(showId: Int): AppResult<Unit>
 
@@ -28,4 +41,7 @@ interface EpisodeRepository {
 
     /** „Obejrzane” na serialu – odhacza wszystkie wyemitowane odcinki (w razie potrzeby najpierw je pobiera). */
     suspend fun markShowWatched(showId: Int): AppResult<Unit>
+
+    /** Odznacza wszystkie odcinki serialu – serial wraca do „Do obejrzenia”. */
+    suspend fun resetProgress(showId: Int)
 }

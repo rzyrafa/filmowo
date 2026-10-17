@@ -31,9 +31,34 @@ interface EpisodeDao {
     @Query("SELECT * FROM episodes WHERE showId = :showId")
     suspend fun getEpisodes(showId: Int): List<EpisodeEntity>
 
-    /** Liczba i łączny czas wszystkich obejrzanych odcinków (do statystyk). */
-    @Query("SELECT COUNT(*) AS count, COALESCE(SUM(runtimeMinutes), 0) AS minutes FROM episodes WHERE watchedAt IS NOT NULL")
-    fun observeWatchedTotals(): Flow<WatchTotals>
+    /** Obejrzane odcinki z datą i czasem trwania (do statystyk). */
+    @Query("SELECT showId, watchedAt, runtimeMinutes FROM episodes WHERE watchedAt IS NOT NULL")
+    fun observeWatchedEpisodes(): Flow<List<WatchedEpisodeRow>>
+
+    /** Odcinki seriali z biblioteki z premierą od [from] (włącznie), najbliższe najpierw. */
+    @Query(
+        "SELECT e.showId, e.seasonNumber, e.episodeNumber, e.name, e.airDate, e.watchedAt, " +
+            "l.title AS showTitle, l.posterPath, l.localPosterFile FROM episodes e " +
+            "JOIN library_items l ON l.tmdbId = e.showId AND l.mediaType = 'TV' " +
+            "WHERE e.airDate IS NOT NULL AND e.airDate >= :from " +
+            "ORDER BY e.airDate, l.title, e.seasonNumber, e.episodeNumber LIMIT :limit",
+    )
+    fun observeUpcoming(from: String, limit: Int): Flow<List<UpcomingEpisodeRow>>
+
+    /** Odcinki seriali z biblioteki z premierą dokładnie w dniu [date] (do powiadomień). */
+    @Query(
+        "SELECT e.showId, e.seasonNumber, e.episodeNumber, e.name, e.airDate, e.watchedAt, " +
+            "l.title AS showTitle, l.posterPath, l.localPosterFile FROM episodes e " +
+            "JOIN library_items l ON l.tmdbId = e.showId AND l.mediaType = 'TV' " +
+            "WHERE e.airDate = :date ORDER BY l.title, e.seasonNumber, e.episodeNumber",
+    )
+    suspend fun getAiringOn(date: String): List<UpcomingEpisodeRow>
+
+    @Query("SELECT * FROM seasons")
+    suspend fun getAllSeasons(): List<SeasonEntity>
+
+    @Query("SELECT * FROM episodes")
+    suspend fun getAllEpisodes(): List<EpisodeEntity>
 
     @Query("SELECT COUNT(*) FROM episodes WHERE showId = :showId")
     suspend fun countEpisodes(showId: Int): Int
@@ -53,6 +78,9 @@ interface EpisodeDao {
 
     @Query("UPDATE episodes SET watchedAt = NULL WHERE showId = :showId AND seasonNumber = :seasonNumber")
     suspend fun clearSeason(showId: Int, seasonNumber: Int)
+
+    @Query("UPDATE episodes SET watchedAt = NULL WHERE showId = :showId")
+    suspend fun clearShow(showId: Int)
 
     /** Oznacza wszystkie wyemitowane odcinki zwykłych sezonów (bez odcinków specjalnych). */
     @Query(

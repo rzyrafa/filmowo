@@ -1,18 +1,22 @@
 package pl.filmowo.feature.library
 
+import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import pl.filmowo.domain.model.EpisodeRef
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
-import pl.filmowo.domain.model.EpisodeRef
 import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.WatchStatus
 import pl.filmowo.testutil.FakeEpisodeRepository
 import pl.filmowo.testutil.FakeLibraryRepository
+import pl.filmowo.testutil.FakeUserPreferences
 import pl.filmowo.testutil.MainDispatcherRule
 import pl.filmowo.testutil.libraryItem
 import pl.filmowo.testutil.metadata
@@ -33,7 +37,12 @@ class LibraryViewModelTest {
 
     private val episodes = FakeEpisodeRepository()
 
-    private fun createViewModel() = LibraryViewModel(repository, episodes)
+    private val preferences = FakeUserPreferences()
+
+    // Stan jest współdzielony tylko przy aktywnym obserwatorze (WhileSubscribed) – test go zapewnia.
+    private fun TestScope.createViewModel() = LibraryViewModel(SavedStateHandle(), repository, episodes, preferences).also { vm ->
+        backgroundScope.launch { vm.state.collect {} }
+    }
 
     @Test
     fun `counts reflect every tab`() = runTest(mainRule.dispatcher) {
@@ -102,6 +111,45 @@ class LibraryViewModelTest {
         runCurrent()
         assertEquals(emptyList<Int>(), viewModel.state.value.entries.map { it.item.tmdbId })
         assertEquals(4, viewModel.state.value.counts[LibraryTab.WATCHED])
+    }
+
+    @Test
+    fun `search matches titles ignoring case and polish diacritics`() = runTest(mainRule.dispatcher) {
+        val viewModel = createViewModel()
+        viewModel.onTabSelected(LibraryTab.WATCHED)
+        viewModel.onQueryChange("slepnac")
+        runCurrent()
+        assertEquals(listOf(3), viewModel.state.value.entries.map { it.item.tmdbId })
+        assertEquals(1, viewModel.state.value.counts[LibraryTab.WATCHED])
+        assertEquals(0, viewModel.state.value.counts[LibraryTab.PLANNED])
+
+        viewModel.onQueryChange("  ŻYWOT ")
+        runCurrent()
+        assertEquals(listOf(1), viewModel.state.value.entries.map { it.item.tmdbId })
+    }
+
+    @Test
+    fun `sort and filter are stored in preferences`() = runTest(mainRule.dispatcher) {
+        val viewModel = createViewModel()
+        viewModel.onSortSelected(LibrarySort.TITLE)
+        viewModel.onFilterSelected(MediaFilter.MOVIES)
+        runCurrent()
+        assertEquals("TITLE", preferences.library.value.sort)
+        assertEquals(MediaFilter.MOVIES, preferences.library.value.filter)
+
+        // Nowy ekran (np. po ponownym uruchomieniu) startuje z zapisanymi ustawieniami.
+        val restored = createViewModel()
+        runCurrent()
+        assertEquals(LibrarySort.TITLE, restored.state.value.sort)
+        assertEquals(MediaFilter.MOVIES, restored.state.value.filter)
+    }
+
+    @Test
+    fun `marking next episode from the tile updates the episode`() = runTest(mainRule.dispatcher) {
+        val viewModel = createViewModel()
+        viewModel.onMarkEpisodeWatched(5, EpisodeRef(2, 3))
+        runCurrent()
+        assertEquals(listOf(Triple(2, 3, true)), episodes.episodeChanges)
     }
 
     @Test

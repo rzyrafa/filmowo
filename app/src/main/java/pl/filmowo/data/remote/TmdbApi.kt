@@ -54,6 +54,24 @@ interface TmdbApi {
         @Query("language") language: String,
     ): SeasonDetailsDto
 
+    @GET("trending/all/week")
+    suspend fun trending(
+        @Query("language") language: String,
+        @Query("page") page: Int = 1,
+    ): SearchResponseDto
+
+    @GET("movie/{id}/recommendations")
+    suspend fun movieRecommendations(
+        @Path("id") id: Int,
+        @Query("language") language: String,
+    ): SearchResponseDto
+
+    @GET("tv/{id}/recommendations")
+    suspend fun tvRecommendations(
+        @Path("id") id: Int,
+        @Query("language") language: String,
+    ): SearchResponseDto
+
     companion object {
         const val BASE_URL = "https://api.themoviedb.org/3/"
         const val LANGUAGE_PRIMARY = "pl-PL"

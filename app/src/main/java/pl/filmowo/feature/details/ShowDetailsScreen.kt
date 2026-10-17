@@ -1,5 +1,8 @@
 package pl.filmowo.feature.details
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,11 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -26,9 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,14 +36,16 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
-import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.SegmentedProgress
+import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.WatchedCheck
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.core.ui.components.progressLabel
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.core.ui.theme.pressScale
+import pl.filmowo.domain.model.MediaType
+import pl.filmowo.domain.model.SearchResult
 import pl.filmowo.domain.model.SeasonProgress
 import pl.filmowo.domain.model.ShowDetails
 
@@ -51,10 +53,12 @@ import pl.filmowo.domain.model.ShowDetails
 fun ShowDetailsScreen(
     onBack: () -> Unit,
     onOpenSeason: (showId: Int, seasonNumber: Int, title: String) -> Unit,
+    onOpenDetails: (id: Int, type: MediaType) -> Unit,
     viewModel: ShowDetailsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val tracking by viewModel.tracking.collectAsStateWithLifecycle()
+    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val refreshError = tracking.refreshError
@@ -65,6 +69,15 @@ fun ShowDetailsScreen(
         if (refreshErrorText != null) {
             snackbarHostState.showSnackbar(refreshErrorText)
             viewModel.onRefreshErrorShown()
+        }
+    }
+    val actionErrorText = state.actionError?.let {
+        stringResource(R.string.details_sync_failed, stringResource(it.messageRes))
+    }
+    LaunchedEffect(actionErrorText) {
+        if (actionErrorText != null) {
+            snackbarHostState.showSnackbar(actionErrorText)
+            viewModel.onActionErrorShown()
         }
     }
 
@@ -81,7 +94,9 @@ fun ShowDetailsScreen(
                     show = content.data,
                     entry = state.library,
                     tracking = tracking,
+                    recommendations = recommendations,
                     viewModel = viewModel,
+                    onOpenDetails = onOpenDetails,
                     onOpenSeason = { number, title -> onOpenSeason(content.data.id, number, title) },
                     modifier = modifier,
                 )
@@ -105,7 +120,9 @@ private fun ShowDetailsContent(
     show: ShowDetails,
     entry: LibraryEntryState?,
     tracking: ShowTrackingState,
+    recommendations: List<SearchResult>,
     viewModel: ShowDetailsViewModel,
+    onOpenDetails: (id: Int, type: MediaType) -> Unit,
     onOpenSeason: (seasonNumber: Int, title: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -147,6 +164,7 @@ private fun ShowDetailsContent(
                 onStatusSelected = viewModel::onStatusSelected,
                 onRemove = viewModel::onRemove,
                 onRatingChange = viewModel::onRatingChange,
+                confirmPlanned = (tracking.progress?.watchedCount ?: 0) > 0,
             )
             tracking.progress?.takeIf { entry != null }?.let { progress ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -164,6 +182,7 @@ private fun ShowDetailsContent(
                 }
             }
             OverviewSection(show.overview)
+            if (entry != null) NoteSection(entry.note, viewModel::onNoteChange)
             if (seasons.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.details_seasons), style = MaterialTheme.typography.titleLarge)
@@ -186,6 +205,7 @@ private fun ShowDetailsContent(
                     }
                 }
             }
+            RecommendationsSection(recommendations, onOpenDetails)
         }
     }
 }

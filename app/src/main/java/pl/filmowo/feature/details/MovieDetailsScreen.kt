@@ -19,14 +19,18 @@ import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.StateTransition
+import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
+import pl.filmowo.domain.model.SearchResult
 
 @Composable
 fun MovieDetailsScreen(
     onBack: () -> Unit,
+    onOpenDetails: (id: Int, type: MediaType) -> Unit,
     viewModel: MovieDetailsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     Scaffold(
         topBar = { DetailsTopBar((state.content as? UiState.Success)?.data?.title, onBack) },
     ) { padding ->
@@ -38,7 +42,9 @@ fun MovieDetailsScreen(
                 is UiState.Success -> MovieDetailsContent(
                     movie = content.data,
                     entry = state.library,
+                    recommendations = recommendations,
                     viewModel = viewModel,
+                    onOpenDetails = onOpenDetails,
                     modifier = modifier,
                 )
             }
@@ -50,7 +56,9 @@ fun MovieDetailsScreen(
 private fun MovieDetailsContent(
     movie: MovieDetails,
     entry: LibraryEntryState?,
+    recommendations: List<SearchResult>,
     viewModel: MovieDetailsViewModel,
+    onOpenDetails: (id: Int, type: MediaType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -75,7 +83,10 @@ private fun MovieDetailsContent(
             onStatusSelected = viewModel::onStatusSelected,
             onRemove = viewModel::onRemove,
             onRatingChange = viewModel::onRatingChange,
+            onRewatchChange = viewModel::onRewatchChange,
         )
         OverviewSection(movie.overview)
+        if (entry != null) NoteSection(entry.note, viewModel::onNoteChange)
+        RecommendationsSection(recommendations, onOpenDetails)
     }
 }

@@ -17,8 +17,8 @@ import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
 import pl.filmowo.data.remote.TmdbApi
 import pl.filmowo.data.remote.TmdbApiKeyInterceptor
-import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MediaFilter
+import pl.filmowo.domain.model.MediaType
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 

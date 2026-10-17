@@ -7,11 +7,13 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [LibraryItemEntity::class, SeasonEntity::class, EpisodeEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // v2: tabele sezonów i odcinków.
         AutoMigration(from = 1, to = 2),
+        // v3: notatki i powtórne obejrzenia.
+        AutoMigration(from = 2, to = 3),
     ],
 )
 @TypeConverters(Converters::class)

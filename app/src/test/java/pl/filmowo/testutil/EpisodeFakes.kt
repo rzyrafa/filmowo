@@ -9,13 +9,15 @@ import pl.filmowo.data.local.EpisodeDao
 import pl.filmowo.data.local.EpisodeEntity
 import pl.filmowo.data.local.EpisodeProgressRow
 import pl.filmowo.data.local.SeasonEntity
-import pl.filmowo.data.local.WatchTotals
+import pl.filmowo.data.local.UpcomingEpisodeRow
+import pl.filmowo.data.local.WatchedEpisodeRow
 import pl.filmowo.data.repository.EpisodeRepository
 import pl.filmowo.domain.model.Episode
 import pl.filmowo.domain.model.EpisodeInfo
 import pl.filmowo.domain.model.SeasonDetails
 import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.TrackedSeason
+import pl.filmowo.domain.model.UpcomingEpisode
 
 /** DAO odcinków w pamięci, odwzorowujące zapytania SQL z [EpisodeDao]. */
 class FakeEpisodeDao : EpisodeDao {
@@ -42,19 +44,44 @@ class FakeEpisodeDao : EpisodeDao {
 
     override suspend fun getEpisodes(showId: Int) = episodes.value.filter { it.showId == showId }
 
-    override fun observeWatchedTotals(): Flow<WatchTotals> = episodes.map { list ->
-        val watched = list.filter { it.watchedAt != null }
-        WatchTotals(watched.size, watched.sumOf { (it.runtimeMinutes ?: 0).toLong() })
+    override fun observeWatchedEpisodes(): Flow<List<WatchedEpisodeRow>> = episodes.map { list ->
+        list.mapNotNull { e -> e.watchedAt?.let { WatchedEpisodeRow(e.showId, it, e.runtimeMinutes) } }
     }
+
+    /** Bez złączenia z biblioteką – testy repozytorium nie używają tych zapytań. */
+    override fun observeUpcoming(from: String, limit: Int): Flow<List<UpcomingEpisodeRow>> = MutableStateFlow(emptyList())
+
+    override suspend fun getAiringOn(date: String): List<UpcomingEpisodeRow> = emptyList()
+
+    override suspend fun getAllSeasons() = seasons.value
+
+    override suspend fun getAllEpisodes() = episodes.value
+
+    override suspend fun clearShow(showId: Int) = update { if (it.showId == showId) it.copy(watchedAt = null) else it }
 
     override suspend fun countEpisodes(showId: Int) = episodes.value.count { it.showId == showId }
 
     override suspend fun setWatched(showId: Int, seasonNumber: Int, episodeNumber: Int, watchedAt: Long?) = update {
-        if (it.showId == showId && it.seasonNumber == seasonNumber && it.episodeNumber == episodeNumber) it.copy(watchedAt = watchedAt) else it
+        if (it.showId == showId &&
+            it.seasonNumber == seasonNumber &&
+            it.episodeNumber == episodeNumber
+        ) {
+            it.copy(watchedAt = watchedAt)
+        } else {
+            it
+        }
     }
 
     override suspend fun markSeasonWatched(showId: Int, seasonNumber: Int, today: String, now: Long) = update {
-        if (it.showId == showId && it.seasonNumber == seasonNumber && it.watchedAt == null && it.isAired(today)) it.copy(watchedAt = now) else it
+        if (it.showId == showId &&
+            it.seasonNumber == seasonNumber &&
+            it.watchedAt == null &&
+            it.isAired(today)
+        ) {
+            it.copy(watchedAt = now)
+        } else {
+            it
+        }
     }
 
     override suspend fun clearSeason(showId: Int, seasonNumber: Int) = update {
@@ -96,6 +123,10 @@ class FakeEpisodeRepository : EpisodeRepository {
     val episodeChanges = mutableListOf<Triple<Int, Int, Boolean>>()
     val seasonChanges = mutableListOf<Triple<Int, Int, Boolean>>()
     var syncResult: AppResult<Unit> = AppResult.Success(Unit)
+    var markShowWatchedResult: AppResult<Unit> = AppResult.Success(Unit)
+    val resetCalls = mutableListOf<Int>()
+    val upcoming = MutableStateFlow<List<UpcomingEpisode>>(emptyList())
+    var syncAllCalls = 0
 
     override fun observeSeasons(showId: Int) = seasons.map { it[showId].orEmpty() }
     override fun observeEpisodes(showId: Int, seasonNumber: Int) = episodes.map { it[showId to seasonNumber].orEmpty() }
@@ -113,9 +144,11 @@ class FakeEpisodeRepository : EpisodeRepository {
         episodeChanges += Triple(seasonNumber, episodeNumber, watched)
         episodes.update { map ->
             val key = showId to seasonNumber
-            map + (key to map[key].orEmpty().map {
-                if (it.info.episodeNumber == episodeNumber) it.copy(watchedAt = if (watched) 1L else null) else it
-            })
+            map + (
+                key to map[key].orEmpty().map {
+                    if (it.info.episodeNumber == episodeNumber) it.copy(watchedAt = if (watched) 1L else null) else it
+                }
+                )
         }
     }
 
@@ -125,7 +158,20 @@ class FakeEpisodeRepository : EpisodeRepository {
 
     override suspend fun markShowWatched(showId: Int): AppResult<Unit> {
         markShowWatchedCalls += showId
-        return AppResult.Success(Unit)
+        return markShowWatchedResult
+    }
+
+    override fun observeUpcoming() = upcoming
+
+    override suspend fun getAiringOn(date: String) = upcoming.value.filter { it.airDate == date }
+
+    override suspend fun syncAll(): AppResult<Unit> {
+        syncAllCalls++
+        return syncResult
+    }
+
+    override suspend fun resetProgress(showId: Int) {
+        resetCalls += showId
     }
 }
 

@@ -26,6 +26,9 @@ data class LibraryItem(
     val addedAt: Long,
     val updatedAt: Long,
     val watchedAt: Long?,
+    val note: String? = null,
+    /** Powtórne obejrzenia filmu (pierwsze obejrzenie się nie wlicza). */
+    val rewatchCount: Int = 0,
 ) {
     val tmdbId: Int get() = metadata.tmdbId
     val mediaType: MediaType get() = metadata.mediaType
@@ -70,7 +73,7 @@ fun LibraryMetadata.toMovieDetails() = MovieDetails(
     genres = genres,
 )
 
-/** Sezony nie są jeszcze zapisywane lokalnie – lista sezonów offline jest pusta. */
+/** Sezony offline pochodzą z tabeli odcinków – tu lista jest pusta. */
 fun LibraryMetadata.toShowDetails() = ShowDetails(
     id = tmdbId,
     title = title,

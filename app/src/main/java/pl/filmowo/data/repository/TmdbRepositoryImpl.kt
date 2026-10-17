@@ -12,9 +12,9 @@ import pl.filmowo.data.remote.dto.MovieDetailsDto
 import pl.filmowo.data.remote.dto.SearchItemDto
 import pl.filmowo.data.remote.dto.TvDetailsDto
 import pl.filmowo.domain.model.EpisodeInfo
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
-import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
 import pl.filmowo.domain.model.SeasonDetails
@@ -82,6 +82,18 @@ class TmdbRepositoryImpl @Inject constructor(
                 )
             },
         )
+    }
+
+    override suspend fun trending(): AppResult<List<SearchResult>> = call {
+        api.trending(LANGUAGE_PRIMARY).results.mapNotNull { it.toDomain(defaultType = null) }.distinctBy { it.mediaType to it.id }
+    }
+
+    override suspend fun recommendations(id: Int, type: MediaType): AppResult<List<SearchResult>> = call {
+        val response = when (type) {
+            MediaType.MOVIE -> api.movieRecommendations(id, LANGUAGE_PRIMARY)
+            MediaType.TV -> api.tvRecommendations(id, LANGUAGE_PRIMARY)
+        }
+        response.results.mapNotNull { it.toDomain(defaultType = type) }.distinctBy { it.mediaType to it.id }
     }
 
     private suspend fun <T> call(block: suspend () -> T): AppResult<T> {

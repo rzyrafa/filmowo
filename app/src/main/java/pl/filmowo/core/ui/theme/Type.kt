@@ -30,7 +30,8 @@ private fun figtree(weight: FontWeight) = Font(
 val DisplayFontFamily = FontFamily(bricolage(FontWeight.Medium), bricolage(FontWeight.SemiBold), bricolage(FontWeight.Bold))
 
 /** Figtree – cały pozostały tekst. */
-val SansFontFamily = FontFamily(figtree(FontWeight.Normal), figtree(FontWeight.Medium), figtree(FontWeight.SemiBold), figtree(FontWeight.Bold))
+val SansFontFamily =
+    FontFamily(figtree(FontWeight.Normal), figtree(FontWeight.Medium), figtree(FontWeight.SemiBold), figtree(FontWeight.Bold))
 
 private fun display(size: Int, line: Int, weight: FontWeight, tracking: Double) = TextStyle(
     fontFamily = DisplayFontFamily,

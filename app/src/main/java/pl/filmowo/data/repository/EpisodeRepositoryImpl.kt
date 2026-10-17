@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import pl.filmowo.core.TimeProvider
 import pl.filmowo.core.di.ApplicationScope
+import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
 import pl.filmowo.core.today
 import pl.filmowo.data.local.EpisodeDao
@@ -26,6 +29,7 @@ import pl.filmowo.domain.model.SeasonDetails
 import pl.filmowo.domain.model.ShowDetails
 import pl.filmowo.domain.model.ShowProgress
 import pl.filmowo.domain.model.TrackedSeason
+import pl.filmowo.domain.model.UpcomingEpisode
 import pl.filmowo.domain.model.WatchStatus
 import pl.filmowo.domain.model.computeSeasonProgress
 import pl.filmowo.domain.model.computeShowProgress
@@ -81,6 +85,31 @@ class EpisodeRepositoryImpl @Inject constructor(
 
     override suspend fun hasEpisodes(showId: Int): Boolean = episodeDao.countEpisodes(showId) > 0
 
+    override fun observeUpcoming(): Flow<List<UpcomingEpisode>> =
+        episodeDao.observeUpcoming(time.today(), UPCOMING_LIMIT).map { rows -> rows.map { it.toDomain() } }
+
+    override suspend fun getAiringOn(date: String): List<UpcomingEpisode> =
+        episodeDao.getAiringOn(date).map { it.toDomain() }
+
+    override suspend fun syncAll(): AppResult<Unit> {
+        var firstError: AppResult.Failure? = null
+        for (show in libraryDao.getAllOfType(MediaType.TV)) {
+            val result = sync(show.tmdbId)
+            if (result is AppResult.Failure) {
+                // Bez klucza API albo z błędnym kluczem kolejne próby nic nie dadzą.
+                if (result.error == AppError.MISSING_API_KEY || result.error == AppError.UNAUTHORIZED) return result
+                firstError = firstError ?: result
+            }
+        }
+        return firstError ?: AppResult.Success(Unit)
+    }
+
+    override suspend fun resetProgress(showId: Int) =
+        writeMutex.withLock {
+            episodeDao.clearShow(showId)
+            reconcileStatus(showId, afterSync = false)
+        }
+
     // Praca w zakresie aplikacji: opuszczenie ekranu nie przerywa synchronizacji w połowie.
     override suspend fun sync(showId: Int): AppResult<Unit> =
         appScope.async { doSync(showId) }.await()
@@ -120,8 +149,10 @@ class EpisodeRepositoryImpl @Inject constructor(
             is AppResult.Success -> result.data
             is AppResult.Failure -> return result
         }
+        // Długie seriale mają kilkadziesiąt sezonów – limit równoległych zapytań chroni przed błędem 429 z TMDB.
+        val permits = Semaphore(MAX_PARALLEL_SEASON_REQUESTS)
         val seasons = coroutineScope {
-            show.seasons.map { async { tmdb.seasonDetails(showId, it.seasonNumber) } }.awaitAll()
+            show.seasons.map { async { permits.withPermit { tmdb.seasonDetails(showId, it.seasonNumber) } } }.awaitAll()
         }
         seasons.filterIsInstance<AppResult.Failure>().firstOrNull()?.let { return it }
 
@@ -193,6 +224,11 @@ class EpisodeRepositoryImpl @Inject constructor(
             // Zmiana odcinków to aktywność – serial trafia na górę sortowania „ostatnio zmienione”.
             !afterSync -> libraryDao.touch(showId, MediaType.TV, now)
         }
+    }
+
+    private companion object {
+        const val MAX_PARALLEL_SEASON_REQUESTS = 4
+        const val UPCOMING_LIMIT = 200
     }
 
     private fun SeasonDetails.toEntity(showId: Int) = SeasonEntity(

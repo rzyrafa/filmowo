@@ -23,6 +23,7 @@ import pl.filmowo.testutil.FakeTmdbRepository
 import pl.filmowo.testutil.MainDispatcherRule
 import pl.filmowo.testutil.libraryItem
 import pl.filmowo.testutil.movie
+import pl.filmowo.testutil.searchResult
 import pl.filmowo.testutil.show
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,6 +41,57 @@ class DetailsViewModelTest {
     private val episodes = FakeEpisodeRepository()
 
     private fun showViewModel() = ShowDetailsViewModel(savedState, tmdb, library, episodes, connectivity)
+
+    @Test
+    fun `planning a show clears episode progress`() = runTest(mainRule.dispatcher) {
+        library.put(libraryItem(show().toLibraryMetadata(), WatchStatus.WATCHED))
+        val viewModel = showViewModel()
+        runCurrent()
+        viewModel.onStatusSelected(WatchStatus.PLANNED)
+        runCurrent()
+        assertEquals(listOf(1), episodes.resetCalls)
+        assertEquals(WatchStatus.PLANNED, viewModel.state.value.library?.status)
+    }
+
+    @Test
+    fun `failed episode download after status change is reported once`() = runTest(mainRule.dispatcher) {
+        episodes.markShowWatchedResult = AppResult.Failure(AppError.NETWORK)
+        val viewModel = showViewModel()
+        runCurrent()
+        viewModel.onStatusSelected(WatchStatus.WATCHED)
+        runCurrent()
+        assertEquals(AppError.NETWORK, viewModel.state.value.actionError)
+
+        viewModel.onActionErrorShown()
+        runCurrent()
+        assertNull(viewModel.state.value.actionError)
+    }
+
+    @Test
+    fun `note and rewatches are saved for library items`() = runTest(mainRule.dispatcher) {
+        library.put(libraryItem(movie().toLibraryMetadata(), WatchStatus.WATCHED))
+        val viewModel = movieViewModel()
+        runCurrent()
+        viewModel.onNoteChange("Z Kasią")
+        viewModel.onRewatchChange(1)
+        runCurrent()
+        assertEquals("Z Kasią", viewModel.state.value.library?.note)
+        assertEquals(1, viewModel.state.value.library?.rewatchCount)
+
+        viewModel.onRewatchChange(-1)
+        runCurrent()
+        viewModel.onRewatchChange(-1)
+        runCurrent()
+        assertEquals(0, viewModel.state.value.library?.rewatchCount)
+    }
+
+    @Test
+    fun `recommendations exclude the item itself`() = runTest(mainRule.dispatcher) {
+        tmdb.recommendationsResult = AppResult.Success(listOf(searchResult(1), searchResult(2)))
+        val viewModel = movieViewModel()
+        runCurrent()
+        assertEquals(listOf(2), viewModel.recommendations.value.map { it.id })
+    }
 
     @Test
     fun `movie details start loading and then show data`() = runTest(mainRule.dispatcher) {

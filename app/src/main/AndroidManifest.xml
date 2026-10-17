@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Kopie zapasowe Androida (chmura i transfer) są wyłączone: dane zostają na urządzeniu. -->
+    <!-- Kopie zapasowe Androida (chmura i transfer) są wyłączone: dane zostają na urządzeniu.
+         Własną kopię użytkownik robi eksportem do pliku (Ustawienia i informacje → Kopia zapasowa). -->
     <application
         android:name=".FilmowoApp"
         android:allowBackup="false"
@@ -22,6 +25,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- WorkManager konfiguruje FilmowoApp (fabryka workerów z Hilt), więc domyślny inicjalizator jest wyłączony. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

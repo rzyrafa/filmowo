@@ -25,4 +25,5 @@ class MovieDetailsViewModel @Inject constructor(
     fetch = { tmdbRepository.movieDetails(it) },
     toMetadata = { it.toLibraryMetadata() },
     fromLocal = { it.toMovieDetails() },
+    fetchRecommendations = { tmdbRepository.recommendations(it, MediaType.MOVIE) },
 )

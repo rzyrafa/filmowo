@@ -7,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import pl.filmowo.data.local.LibraryItemEntity
 import pl.filmowo.domain.model.MediaType
-import pl.filmowo.domain.model.WatchStats
 import pl.filmowo.domain.model.WatchStatus
 import pl.filmowo.testutil.FakeEpisodeDao
 import pl.filmowo.testutil.FakeLibraryDao
@@ -17,7 +16,7 @@ class StatsRepositoryImplTest {
 
     private val libraryDao = FakeLibraryDao()
     private val episodeDao = FakeEpisodeDao()
-    private val repository = StatsRepositoryImpl(libraryDao, episodeDao)
+    private val repository = StatsRepositoryImpl(libraryDao, episodeDao) { 0L }
 
     private fun entity(id: Int, type: MediaType, status: WatchStatus, runtime: Int?) = LibraryItemEntity(
         tmdbId = id, mediaType = type, title = "T$id", originalTitle = null, overview = "", year = null,
@@ -48,9 +47,11 @@ class StatsRepositoryImplTest {
             ),
         )
 
-        assertEquals(
-            WatchStats(moviesWatched = 2, movieMinutes = 120, episodesWatched = 3, episodeMinutes = 135),
-            repository.observeStats().first(),
-        )
+        val stats = repository.observeStats().first()
+        assertEquals(2, stats.moviesWatched)
+        assertEquals(120L, stats.movieMinutes)
+        assertEquals(3, stats.episodesWatched)
+        assertEquals(135L, stats.episodeMinutes)
+        assertEquals(1, stats.showsCompleted)
     }
 }

@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -48,6 +49,9 @@ import pl.filmowo.domain.model.WatchStatus
 /**
  * Przyciski „Do obejrzenia” / „Obejrzane” i ocena. Ponowne kliknięcie
  * wybranego statusu pyta o usunięcie z biblioteki.
+ *
+ * [confirmPlanned] – wybór „Do obejrzenia” wyczyści postęp (serial z odhaczonymi odcinkami), więc najpierw pytamy.
+ * [onRewatchChange] – licznik powtórek przy obejrzanym filmie; null ukrywa licznik (seriale).
  */
 @Composable
 internal fun LibraryActions(
@@ -55,8 +59,11 @@ internal fun LibraryActions(
     onStatusSelected: (WatchStatus) -> Unit,
     onRemove: () -> Unit,
     onRatingChange: (Int?) -> Unit,
+    confirmPlanned: Boolean = false,
+    onRewatchChange: ((Int) -> Unit)? = null,
 ) {
     var confirmRemove by rememberSaveable { mutableStateOf(false) }
+    var confirmReset by rememberSaveable { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
 
     // animateContentSize: znacznik „Oglądasz ten serial” pojawia się bez skoku układu.
@@ -70,7 +77,11 @@ internal fun LibraryActions(
                 iconRes = R.drawable.ic_bookmark,
                 labelRes = R.string.status_planned,
                 onClick = {
-                    if (entry?.status == WatchStatus.PLANNED) confirmRemove = true else onStatusSelected(WatchStatus.PLANNED)
+                    when {
+                        entry?.status == WatchStatus.PLANNED -> confirmRemove = true
+                        confirmPlanned -> confirmReset = true
+                        else -> onStatusSelected(WatchStatus.PLANNED)
+                    }
                 },
             )
             StatusButton(
@@ -84,6 +95,9 @@ internal fun LibraryActions(
         }
         if (entry?.status == WatchStatus.WATCHING) {
             Badge(text = stringResource(R.string.status_currently_watching), tone = ToneName.LILAC)
+        }
+        if (entry?.status == WatchStatus.WATCHED && onRewatchChange != null) {
+            RewatchCounter(count = entry.rewatchCount, onChange = onRewatchChange)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             val colors = FilmowoTheme.colors
@@ -138,6 +152,23 @@ internal fun LibraryActions(
         )
     }
 
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text(stringResource(R.string.reset_progress_title)) },
+            text = { Text(stringResource(R.string.reset_progress_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmReset = false
+                    onStatusSelected(WatchStatus.PLANNED)
+                }) { Text(stringResource(R.string.action_reset)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
+    }
+
     if (showRatingDialog && entry != null) {
         RatingDialog(
             current = entry.rating,
@@ -147,6 +178,33 @@ internal fun LibraryActions(
                 onRatingChange(it)
             },
         )
+    }
+}
+
+/** „Obejrzane razy: 2” z przyciskami −/+ (pierwsze obejrzenie liczy się jako 1). */
+@Composable
+private fun RewatchCounter(count: Int, onChange: (Int) -> Unit) {
+    val colors = FilmowoTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            painterResource(R.drawable.ic_replay),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = colors.inkMuted,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            stringResource(R.string.rewatch_title, count + 1),
+            style = MaterialTheme.typography.labelLarge,
+            color = colors.ink,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = { onChange(-1) }, enabled = count > 0) {
+            Icon(painterResource(R.drawable.ic_remove), stringResource(R.string.rewatch_remove))
+        }
+        IconButton(onClick = { onChange(1) }) {
+            Icon(painterResource(R.drawable.ic_add), stringResource(R.string.rewatch_add))
+        }
     }
 }
 

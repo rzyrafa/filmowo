@@ -11,6 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
+import pl.filmowo.core.ui.UiState
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.testutil.FakeConnectivityObserver
@@ -33,6 +34,21 @@ class SearchViewModelTest {
         viewModel.onQueryChange(query)
         advanceTimeBy(SearchViewModel.DEBOUNCE_MS + 1)
         runCurrent()
+    }
+
+    @Test
+    fun `trending titles load on start and retry after reconnect`() = runTest(mainRule.dispatcher) {
+        repository.trendingResult = AppResult.Failure(AppError.NETWORK)
+        connectivity.isOnline.value = false
+        val viewModel = createViewModel()
+        runCurrent()
+        assertEquals(UiState.Error(AppError.NETWORK), viewModel.state.value.trending)
+
+        repository.trendingResult = AppResult.Success(listOf(searchResult(7)))
+        connectivity.isOnline.value = true
+        runCurrent()
+        assertEquals(UiState.Success(listOf(searchResult(7))), viewModel.state.value.trending)
+        assertEquals(2, repository.trendingCalls)
     }
 
     @Test

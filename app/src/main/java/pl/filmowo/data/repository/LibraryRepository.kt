@@ -21,4 +21,13 @@ interface LibraryRepository {
     suspend fun setRating(id: Int, type: MediaType, rating: Int?)
 
     suspend fun remove(id: Int, type: MediaType)
+
+    /** Notatka użytkownika; pusta lub null usuwa notatkę. */
+    suspend fun setNote(id: Int, type: MediaType, note: String?)
+
+    /** Liczba powtórnych obejrzeń (≥ 0). */
+    suspend fun setRewatchCount(id: Int, type: MediaType, count: Int)
+
+    /** Pobiera plakaty pozycji, które nie mają jeszcze kopii lokalnej (np. po imporcie kopii zapasowej). */
+    suspend fun downloadMissingPosters()
 }

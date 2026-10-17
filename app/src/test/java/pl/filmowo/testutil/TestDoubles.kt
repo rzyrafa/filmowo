@@ -12,9 +12,9 @@ import org.junit.runner.Description
 import pl.filmowo.core.network.AppResult
 import pl.filmowo.core.network.ConnectivityObserver
 import pl.filmowo.data.repository.TmdbRepository
+import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.MovieDetails
-import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchPage
 import pl.filmowo.domain.model.SearchResult
 import pl.filmowo.domain.model.SeasonDetails
@@ -44,6 +44,9 @@ class FakeTmdbRepository : TmdbRepository {
     var seasonHandler: (showId: Int, season: Int) -> AppResult<SeasonDetails> =
         { _, season -> AppResult.Success(SeasonDetails(season, null, null, emptyList())) }
     val seasonCalls = mutableListOf<Int>()
+    var trendingResult: AppResult<List<SearchResult>> = AppResult.Success(emptyList())
+    var trendingCalls = 0
+    var recommendationsResult: AppResult<List<SearchResult>> = AppResult.Success(emptyList())
 
     override suspend fun search(query: String, filter: MediaFilter, page: Int): AppResult<SearchPage> {
         val call = SearchCall(query, filter, page)
@@ -60,6 +63,13 @@ class FakeTmdbRepository : TmdbRepository {
         showCalls++
         return showResult
     }
+
+    override suspend fun trending(): AppResult<List<SearchResult>> {
+        trendingCalls++
+        return trendingResult
+    }
+
+    override suspend fun recommendations(id: Int, type: MediaType): AppResult<List<SearchResult>> = recommendationsResult
 
     override suspend fun seasonDetails(showId: Int, seasonNumber: Int): AppResult<SeasonDetails> {
         seasonCalls += seasonNumber

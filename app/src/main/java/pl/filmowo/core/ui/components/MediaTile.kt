@@ -41,6 +41,8 @@ fun MediaTile(
     rating: Int? = null,
     status: WatchStatus? = null,
     progress: TileProgress? = null,
+    /** Dodatkowa akcja pod kafelkiem (np. odhaczenie następnego odcinka). */
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Column(
@@ -76,6 +78,7 @@ fun MediaTile(
             Spacer(Modifier.height(4.dp))
             SegmentedProgress(done = progress.done, total = progress.total, label = progress.label)
         }
+        footer?.invoke()
     }
 }
 

@@ -83,6 +83,21 @@ class LibraryRepositoryImpl @Inject constructor(
         existing.localPosterFile?.let { posters.delete(it) }
     }
 
+    override suspend fun setNote(id: Int, type: MediaType, note: String?) {
+        dao.setNote(id, type, note?.trim()?.takeIf { it.isNotEmpty() }, time.now())
+    }
+
+    override suspend fun setRewatchCount(id: Int, type: MediaType, count: Int) {
+        require(count >= 0) { "Liczba powtórek nie może być ujemna" }
+        dao.setRewatchCount(id, type, count, time.now())
+    }
+
+    override suspend fun downloadMissingPosters() {
+        dao.getAll()
+            .filter { it.localPosterFile == null && it.posterPath != null }
+            .forEach { schedulePosterDownload(it.toDomain().metadata) }
+    }
+
     private fun needsPosterDownload(existing: LibraryItemEntity?, metadata: LibraryMetadata): Boolean =
         metadata.posterPath != null &&
             (existing?.localPosterFile == null || existing.posterPath != metadata.posterPath)

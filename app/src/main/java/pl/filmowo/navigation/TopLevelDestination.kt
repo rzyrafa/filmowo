@@ -14,5 +14,6 @@ enum class TopLevelDestination(
 ) {
     SEARCH(SearchRoute, SearchRoute::class, R.drawable.ic_search, R.string.nav_search),
     LIBRARY(LibraryRoute, LibraryRoute::class, R.drawable.ic_video_library, R.string.nav_library),
+    UPCOMING(UpcomingRoute, UpcomingRoute::class, R.drawable.ic_calendar, R.string.nav_upcoming),
     STATS(StatsRoute, StatsRoute::class, R.drawable.ic_bar_chart, R.string.nav_stats),
 }

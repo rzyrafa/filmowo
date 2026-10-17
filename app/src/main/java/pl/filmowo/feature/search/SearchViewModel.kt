@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import pl.filmowo.core.network.AppError
 import pl.filmowo.core.network.AppResult
 import pl.filmowo.core.network.ConnectivityObserver
+import pl.filmowo.core.ui.UiState
+import pl.filmowo.core.ui.toUiState
 import pl.filmowo.data.repository.TmdbRepository
 import pl.filmowo.domain.model.MediaFilter
 import pl.filmowo.domain.model.SearchResult
@@ -28,6 +30,8 @@ data class SearchUiState(
     val query: String = "",
     val filter: MediaFilter = MediaFilter.ALL,
     val results: SearchResultsState = SearchResultsState.Idle,
+    /** Popularne tytuły pokazywane przy pustym polu wyszukiwania. */
+    val trending: UiState<List<SearchResult>> = UiState.Loading,
 )
 
 sealed interface SearchResultsState {
@@ -57,6 +61,7 @@ class SearchViewModel @Inject constructor(
 
     private val queryInput = MutableStateFlow("")
     private var searchJob: Job? = null
+    private var trendingJob: Job? = null
 
     init {
         queryInput
@@ -66,10 +71,13 @@ class SearchViewModel @Inject constructor(
             .onEach { search(it) }
             .launchIn(viewModelScope)
 
+        loadTrending()
+
         // Po odzyskaniu internetu ponów zapytanie, które nie powiodło się z powodu braku sieci.
         connectivity.isOnline
             .filter { it }
             .onEach {
+                if (_state.value.trending is UiState.Error) loadTrending()
                 when (val results = _state.value.results) {
                     is SearchResultsState.Error -> if (results.error == AppError.NETWORK) retry()
                     is SearchResultsState.Success -> if (results.loadMoreError == AppError.NETWORK) loadMore()
@@ -77,6 +85,17 @@ class SearchViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun retryTrending() = loadTrending()
+
+    private fun loadTrending() {
+        if (trendingJob?.isActive == true) return
+        _state.update { it.copy(trending = UiState.Loading) }
+        trendingJob = viewModelScope.launch {
+            val trending = repository.trending().toUiState()
+            _state.update { it.copy(trending = trending) }
+        }
     }
 
     fun onQueryChange(query: String) {

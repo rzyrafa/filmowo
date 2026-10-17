@@ -6,6 +6,7 @@
     <string name="nav_search">Szukaj</string>
     <string name="nav_library">Biblioteka</string>
     <string name="nav_stats">Statystyki</string>
+    <string name="nav_upcoming">Premiery</string>
     <string name="action_back">Wstecz</string>
     <string name="action_retry">Spróbuj ponownie</string>
     <string name="action_clear">Wyczyść</string>
@@ -22,6 +23,7 @@
     <string name="search_hint">Tytuł filmu lub serialu</string>
     <string name="search_placeholder">Wyszukaj filmy i seriale</string>
     <string name="search_empty">Nic nie znaleziono</string>
+    <string name="search_trending">Popularne w tym tygodniu</string>
     <string name="filter_all">Wszystko</string>
     <string name="filter_movies">Filmy</string>
     <string name="filter_shows">Seriale</string>
@@ -39,6 +41,21 @@
     <string name="runtime_minutes">%1$d min</string>
     <string name="runtime_hours">%1$d godz.</string>
     <string name="runtime_hours_minutes">%1$d godz. %2$d min</string>
+    <string name="details_recommendations">Podobne tytuły</string>
+    <string name="details_sync_failed">Nie udało się pobrać odcinków. %1$s</string>
+
+    <!-- Notatka -->
+    <string name="note_title">Twoja notatka</string>
+    <string name="note_empty">Dodaj notatkę, np. z kim oglądać albo co Ci się podobało.</string>
+    <string name="note_add">Dodaj notatkę</string>
+    <string name="note_edit">Edytuj</string>
+    <string name="note_hint">Notatka</string>
+    <string name="action_save">Zapisz</string>
+
+    <!-- Powtórki -->
+    <string name="rewatch_title">Obejrzane razy: %1$d</string>
+    <string name="rewatch_add">Obejrzane ponownie</string>
+    <string name="rewatch_remove">Odejmij powtórkę</string>
 
     <!-- Biblioteka i statusy -->
     <string name="status_planned">Do obejrzenia</string>
@@ -47,7 +64,6 @@
     <string name="library_tab_watching">Oglądam</string>
     <string name="library_tab_planned">Do obejrzenia</string>
     <string name="library_tab_watched">Obejrzane</string>
-    <string name="library_tab_with_count">%1$s (%2$d)</string>
     <string name="library_empty_watching">Nie oglądasz teraz żadnego serialu</string>
     <string name="library_empty_planned">Nie masz nic do obejrzenia. Dodaj tytuły z wyszukiwarki.</string>
     <string name="library_empty_watched">Nie masz jeszcze obejrzanych tytułów</string>
@@ -60,12 +76,19 @@
     <string name="remove_message">Pozycja zniknie z biblioteki razem z Twoją oceną.</string>
     <string name="action_remove">Usuń</string>
     <string name="action_cancel">Anuluj</string>
+    <string name="reset_progress_title">Wyczyścić postęp?</string>
+    <string name="reset_progress_message">Serial wróci do „Do obejrzenia”, a wszystkie odhaczone odcinki zostaną odznaczone.</string>
+    <string name="action_reset">Wyczyść</string>
+    <string name="library_search_hint">Szukaj w bibliotece</string>
+    <string name="library_search_close">Zamknij wyszukiwanie</string>
+    <string name="library_search_empty">Brak pozycji pasujących do „%1$s”</string>
+    <string name="library_next_episode">Odhacz S%1$dE%2$d</string>
+    <string name="library_next_episode_description">Odhacz odcinek %2$d sezonu %1$d jako obejrzany</string>
 
     <!-- Ocena -->
     <string name="rating_requires_library">Dodaj do biblioteki, aby ocenić</string>
     <string name="rating_none">Brak oceny</string>
     <string name="rating_value">Twoja ocena: %1$d/10</string>
-    <string name="rating_short">%1$d/10</string>
     <string name="rating_add">Oceń</string>
     <string name="rating_change">Zmień</string>
     <string name="rating_remove">Usuń ocenę</string>
@@ -88,6 +111,22 @@
     <string name="episode_no_date">Data premiery nieznana</string>
     <string name="refresh_failed">Nie udało się odświeżyć. %1$s</string>
 
+    <!-- Premiery -->
+    <string name="upcoming_empty">Brak zapowiedzianych odcinków dla seriali z Twojej biblioteki</string>
+    <string name="upcoming_today">Dziś</string>
+    <string name="upcoming_tomorrow">Jutro</string>
+    <string name="upcoming_episode">S%1$dE%2$d · %3$s</string>
+    <string name="upcoming_episode_no_name">S%1$dE%2$d</string>
+    <string name="upcoming_hint">Odcinki odświeżają się automatycznie co kilka godzin.</string>
+    <string name="notification_channel_premieres">Premiery odcinków</string>
+    <string name="notification_episode_line">%1$s · S%2$dE%3$d</string>
+    <plurals name="notification_premieres_title">
+        <item quantity="one">Dziś premiera %d odcinka</item>
+        <item quantity="few">Dziś premiera %d odcinków</item>
+        <item quantity="many">Dziś premiera %d odcinków</item>
+        <item quantity="other">Dziś premiera %d odcinka</item>
+    </plurals>
+
     <!-- Liczebniki -->
     <plurals name="seasons_count">
         <item quantity="one">%d sezon</item>
@@ -109,6 +148,14 @@
     <string name="stats_movies">Obejrzane filmy</string>
     <string name="stats_episodes">Obejrzane odcinki</string>
     <string name="stats_time">Czas: %1$s</string>
+    <string name="stats_rewatches">W tym powtórki: %1$d</string>
+    <string name="stats_this_year">W tym roku</string>
+    <string name="stats_shows_completed">Ukończone seriale: %1$d</string>
+    <string name="stats_average_rating">Średnia ocena</string>
+    <string name="stats_rated_count">Ocenione: %1$d</string>
+    <string name="stats_genres">Ulubione gatunki</string>
+    <string name="stats_activity">Aktywność – ostatnie 6 miesięcy</string>
+    <string name="stats_activity_description">%1$s: %2$s</string>
     <plurals name="days_count">
         <item quantity="one">%d dzień</item>
         <item quantity="few">%d dni</item>
@@ -117,9 +164,25 @@
     </plurals>
 
     <!-- O aplikacji -->
-    <string name="about_title">O aplikacji</string>
+    <string name="about_title">Ustawienia i informacje</string>
     <string name="about_version">Wersja %1$s</string>
     <string name="about_privacy">Wszystkie Twoje dane są przechowywane wyłącznie na tym urządzeniu. Aplikacja nie ma kont, reklam ani analityki.</string>
     <string name="about_data_source_title">Źródło danych</string>
+    <string name="settings_notifications_title">Powiadomienia</string>
+    <string name="settings_notifications">Premiery odcinków</string>
+    <string name="settings_notifications_summary">Raz dziennie, gdy wychodzi nowy odcinek serialu z biblioteki.</string>
+    <string name="settings_notifications_denied">Powiadomienia są zablokowane w ustawieniach systemu.</string>
+    <string name="backup_title">Kopia zapasowa</string>
+    <string name="backup_summary">Zapisz bibliotekę, oceny, notatki i obejrzane odcinki do pliku albo przywróć je z pliku.</string>
+    <string name="backup_export">Eksportuj</string>
+    <string name="backup_import">Importuj</string>
+    <string name="backup_export_done">Zapisano pozycji: %1$d</string>
+    <string name="backup_export_failed">Nie udało się zapisać pliku.</string>
+    <string name="backup_import_done">Przywrócono pozycji: %1$d</string>
+    <string name="backup_import_invalid">To nie jest plik kopii zapasowej Filmowo.</string>
+    <string name="backup_import_failed">Nie udało się odczytać pliku.</string>
+    <string name="backup_import_confirm_title">Przywrócić kopię?</string>
+    <string name="backup_import_confirm_message">Pozycje z pliku zastąpią te same pozycje w bibliotece. Pozostałe zostaną bez zmian.</string>
+    <string name="backup_import_confirm">Przywróć</string>
     <string name="about_tmdb_attribution">Ta aplikacja korzysta z API TMDB, ale nie jest wspierana ani certyfikowana przez TMDB.</string>
 </resources>

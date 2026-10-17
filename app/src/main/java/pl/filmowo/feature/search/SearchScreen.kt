@@ -4,12 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,10 +25,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import pl.filmowo.R
+import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.MediaFilterRow
@@ -51,6 +54,7 @@ import pl.filmowo.core.ui.components.MediaTile
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.StateTransition
 import pl.filmowo.core.ui.components.TopLevelTopBar
+import pl.filmowo.core.ui.components.isRetryable
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.core.ui.theme.FilmowoRadius
 import pl.filmowo.core.ui.theme.FilmowoTheme
@@ -74,6 +78,8 @@ fun SearchScreen(
             MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterChange)
             SearchResults(
                 results = state.results,
+                trending = state.trending,
+                onRetryTrending = viewModel::retryTrending,
                 onRetry = viewModel::retry,
                 onLoadMore = viewModel::loadMore,
                 onOpenResult = onOpenResult,
@@ -129,13 +135,15 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
 @Composable
 private fun SearchResults(
     results: SearchResultsState,
+    trending: UiState<List<SearchResult>>,
+    onRetryTrending: () -> Unit,
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
     onOpenResult: (SearchResult) -> Unit,
 ) {
     StateTransition(results, contentKey = { it::class }) { results ->
         when (results) {
-            SearchResultsState.Idle -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_placeholder), tone = ToneName.SKY)
+            SearchResultsState.Idle -> TrendingContent(trending, onRetryTrending, onOpenResult)
             SearchResultsState.Loading -> LoadingContent()
             SearchResultsState.Empty -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_empty), tone = ToneName.NEUTRAL)
             is SearchResultsState.Error -> ErrorContent(results.error, onRetry)
@@ -199,6 +207,59 @@ private fun ResultList(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Pusty ekran wyszukiwarki: popularne w tym tygodniu, a bez internetu – dotychczasowa zachęta. */
+@Composable
+private fun TrendingContent(
+    trending: UiState<List<SearchResult>>,
+    onRetry: () -> Unit,
+    onOpenResult: (SearchResult) -> Unit,
+) {
+    StateTransition(trending, contentKey = { it::class }) { state ->
+        when {
+            state is UiState.Success && state.data.isNotEmpty() -> LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 150.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painterResource(R.drawable.ic_trending),
+                            contentDescription = null,
+                            tint = FilmowoTheme.colors.brand,
+                            modifier = Modifier.size(22.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.search_trending), style = MaterialTheme.typography.titleLarge)
+                    }
+                }
+                items(state.data, key = { "${it.mediaType}-${it.id}" }) { item ->
+                    MediaTile(
+                        title = item.title,
+                        mediaType = item.mediaType,
+                        year = item.year,
+                        posterModel = TmdbImages.posterSmall(item.posterPath),
+                        onClick = { onOpenResult(item) },
+                    )
+                }
+            }
+            state is UiState.Loading -> LoadingContent()
+            else -> PlaceholderContent(
+                R.drawable.ic_search,
+                stringResource(R.string.search_placeholder),
+                tone = ToneName.SKY,
+                action = if (state is UiState.Error && state.error.isRetryable) {
+                    { TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) } }
+                } else {
+                    null
+                },
+            )
         }
     }
 }
