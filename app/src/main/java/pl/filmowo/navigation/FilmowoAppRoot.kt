@@ -1,16 +1,30 @@
 package pl.filmowo.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination
@@ -23,6 +37,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.domain.model.MediaType
 import pl.filmowo.feature.about.AboutScreen
 import pl.filmowo.feature.details.MovieDetailsScreen
@@ -42,6 +58,7 @@ fun FilmowoAppRoot() {
     Scaffold(
         // Wcięcia systemowe obsługują paski ekranów; tu tylko dolna nawigacja.
         contentWindowInsets = WindowInsets(0),
+        containerColor = FilmowoTheme.colors.surface,
         bottomBar = {
             if (showBottomBar) {
                 FilmowoBottomBar(
@@ -87,20 +104,54 @@ fun FilmowoAppRoot() {
     }
 }
 
+/** Pływająca ciemna wyspa (inverse) z koralową pigułką pod aktywną ikoną. */
 @Composable
 private fun FilmowoBottomBar(
     currentDestination: NavDestination?,
     onSelect: (TopLevelDestination) -> Unit,
 ) {
-    NavigationBar {
+    val colors = FilmowoTheme.colors
+    Row(
+        modifier = Modifier
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .shadow(12.dp, FilmowoRadius.Xl)
+            .background(colors.inverse, FilmowoRadius.Xl)
+            .padding(8.dp)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         TopLevelDestination.entries.forEach { destination ->
-            val label = stringResource(destination.labelRes)
-            NavigationBarItem(
-                selected = currentDestination.isOn(destination),
-                onClick = { onSelect(destination) },
-                icon = { Icon(painterResource(destination.iconRes), contentDescription = null) },
-                label = { Text(label) },
-            )
+            val selected = currentDestination.isOn(destination)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(FilmowoRadius.Lg)
+                    .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(destination) })
+                    .padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 56.dp, height = 32.dp)
+                        .background(if (selected) colors.brand else colors.inverse, FilmowoRadius.Pill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painterResource(destination.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = if (selected) colors.onBrand else colors.onInverseMuted,
+                    )
+                }
+                Text(
+                    stringResource(destination.labelRes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) colors.onInverse else colors.onInverseMuted,
+                )
+            }
         }
     }
 }

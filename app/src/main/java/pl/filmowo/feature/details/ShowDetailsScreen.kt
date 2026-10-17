@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -24,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,8 +35,12 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
+import pl.filmowo.core.ui.components.SegmentedProgress
+import pl.filmowo.core.ui.components.WatchedCheck
 import pl.filmowo.core.ui.components.messageRes
 import pl.filmowo.core.ui.components.progressLabel
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.domain.model.SeasonProgress
 import pl.filmowo.domain.model.ShowDetails
 
@@ -139,11 +145,11 @@ private fun ShowDetailsContent(
             )
             tracking.progress?.takeIf { entry != null }?.let { progress ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.titleMedium)
-                    Text(progressLabel(progress), style = MaterialTheme.typography.bodyLarge)
-                    LinearProgressIndicator(
-                        progress = { progress.percent / 100f },
-                        modifier = Modifier.fillMaxWidth(),
+                    Text(stringResource(R.string.progress_title), style = MaterialTheme.typography.titleLarge)
+                    SegmentedProgress(
+                        done = progress.watchedCount,
+                        total = progress.airedCount,
+                        label = progressLabel(progress),
                     )
                     Text(
                         stringResource(R.string.progress_episodes, progress.watchedCount, progress.airedCount),
@@ -155,7 +161,7 @@ private fun ShowDetailsContent(
             OverviewSection(show.overview)
             if (seasons.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.details_seasons), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.details_seasons), style = MaterialTheme.typography.titleLarge)
                     if (entry == null) {
                         Text(
                             stringResource(R.string.tracking_requires_library),
@@ -179,6 +185,7 @@ private fun ShowDetailsContent(
     }
 }
 
+/** Biała karta sezonu: tytuł, liczba odcinków, segmentowy postęp i odhaczenie całego sezonu. */
 @Composable
 private fun SeasonCard(
     title: String,
@@ -187,39 +194,43 @@ private fun SeasonCard(
     onClick: () -> Unit,
     onWatchedChange: (Boolean) -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
-                val progress = season.progress
+    val colors = FilmowoTheme.colors
+    val progress = season.progress
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(FilmowoRadius.Lg)
+            .background(colors.surfaceRaised)
+            .clickable(onClick = onClick)
+            .padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            val episodes = pluralStringResource(R.plurals.episodes_count, season.episodeCount, season.episodeCount)
+            if (tracked && progress != null && progress.totalCount > 0) {
+                SegmentedProgress(
+                    done = progress.watchedCount,
+                    total = progress.totalCount,
+                    label = stringResource(R.string.season_progress, progress.watchedCount, progress.totalCount),
+                )
+            } else {
                 Text(
-                    text = listOfNotNull(
-                        if (tracked && progress != null) {
-                            stringResource(R.string.season_progress, progress.watchedCount, progress.totalCount)
-                        } else {
-                            pluralStringResource(R.plurals.episodes_count, season.episodeCount, season.episodeCount)
-                        },
-                        season.year?.toString(),
-                    ).joinToString(" · "),
+                    text = listOfNotNull(episodes, season.year?.toString()).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (tracked && progress != null && progress.totalCount > 0) {
-                    LinearProgressIndicator(
-                        progress = { progress.watchedCount.toFloat() / progress.totalCount },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            if (tracked && season.progress != null && season.progress.airedCount > 0) {
-                Checkbox(
-                    checked = season.progress.isComplete,
-                    onCheckedChange = onWatchedChange,
+                    color = colors.inkMuted,
                 )
             }
+        }
+        if (tracked && progress != null && progress.airedCount > 0) {
+            WatchedCheck(
+                checked = progress.isComplete,
+                enabled = true,
+                modifier = Modifier
+                    .clip(FilmowoRadius.Sm)
+                    .toggleable(value = progress.isComplete, role = Role.Checkbox, onValueChange = onWatchedChange),
+            )
         }
     }
 }

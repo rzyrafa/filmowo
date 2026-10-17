@@ -2,6 +2,8 @@ package pl.filmowo.feature.details
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,12 +12,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,6 +37,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pl.filmowo.R
+import pl.filmowo.core.ui.components.Badge
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
+import pl.filmowo.core.ui.theme.ToneName
 import pl.filmowo.domain.model.WatchStatus
 
 /**
@@ -68,31 +77,36 @@ internal fun LibraryActions(
             )
         }
         if (entry?.status == WatchStatus.WATCHING) {
-            Text(
-                stringResource(R.string.status_currently_watching),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Badge(text = stringResource(R.string.status_currently_watching), tone = ToneName.LILAC)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painterResource(R.drawable.ic_star),
-                contentDescription = null,
-                tint = if (entry?.rating != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(8.dp))
-            if (entry == null) {
-                Text(
-                    stringResource(R.string.rating_requires_library),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            val colors = FilmowoTheme.colors
+            val rated = entry?.rating != null
+            Row(
+                modifier = Modifier
+                    .height(32.dp)
+                    .background(if (rated) colors.butter else colors.surfaceSunken, FilmowoRadius.Pill)
+                    .padding(start = 10.dp, end = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_star),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (rated) colors.onButter else colors.inkMuted,
                 )
-            } else {
+                Spacer(Modifier.width(6.dp))
                 Text(
-                    text = entry.rating?.let { stringResource(R.string.rating_value, it) }
-                        ?: stringResource(R.string.rating_none),
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = when {
+                        entry == null -> stringResource(R.string.rating_requires_library)
+                        entry.rating != null -> stringResource(R.string.rating_value, entry.rating)
+                        else -> stringResource(R.string.rating_none)
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (rated) colors.onButter else colors.inkMuted,
                 )
+            }
+            if (entry != null) {
                 Spacer(Modifier.width(8.dp))
                 TextButton(onClick = { showRatingDialog = true }) {
                     Text(stringResource(if (entry.rating == null) R.string.rating_add else R.string.rating_change))
@@ -142,10 +156,17 @@ private fun RowScope.StatusButton(
         Spacer(Modifier.width(ButtonDefaults.IconSpacing))
         Text(stringResource(labelRes))
     }
+    val colors = FilmowoTheme.colors
     if (selected) {
-        Button(onClick = onClick, modifier = Modifier.weight(1f), content = content)
+        Button(onClick = onClick, modifier = Modifier.weight(1f).height(48.dp), content = content)
     } else {
-        OutlinedButton(onClick = onClick, modifier = Modifier.weight(1f), content = content)
+        OutlinedButton(
+            onClick = onClick,
+            modifier = Modifier.weight(1f).height(48.dp),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surfaceRaised, contentColor = colors.ink),
+            border = BorderStroke(1.dp, colors.line),
+            content = content,
+        )
     }
 }
 
@@ -169,6 +190,11 @@ private fun RatingDialog(
                         selected = value == current,
                         onClick = { onSelect(value) },
                         label = { Text(value.toString()) },
+                        shape = FilmowoRadius.Pill,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = FilmowoTheme.colors.ink,
+                            selectedLabelColor = FilmowoTheme.colors.onInk,
+                        ),
                     )
                 }
             }

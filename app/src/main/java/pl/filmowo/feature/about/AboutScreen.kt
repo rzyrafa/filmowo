@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pl.filmowo.BuildConfig
 import pl.filmowo.R
+import pl.filmowo.core.ui.components.filmowoTopBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +37,7 @@ fun AboutScreen(onBack: () -> Unit) {
                         )
                     }
                 },
+                colors = filmowoTopBarColors(),
             )
         },
     ) { padding ->

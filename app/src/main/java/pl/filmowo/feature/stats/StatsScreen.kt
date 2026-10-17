@@ -1,17 +1,21 @@
 package pl.filmowo.feature.stats
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -30,6 +35,9 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.PlaceholderContent
 import pl.filmowo.core.ui.components.TopLevelTopBar
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
+import pl.filmowo.core.ui.theme.ToneName
 import pl.filmowo.domain.model.WatchStats
 import pl.filmowo.domain.model.splitDuration
 
@@ -49,6 +57,7 @@ fun StatsScreen(
             stats == null || stats.isEmpty -> PlaceholderContent(
                 iconRes = R.drawable.ic_bar_chart,
                 text = stringResource(R.string.stats_empty),
+                tone = ToneName.LILAC,
                 modifier = modifier,
             )
             else -> StatsContent(stats, modifier)
@@ -58,79 +67,91 @@ fun StatsScreen(
 
 @Composable
 private fun StatsContent(stats: WatchStats, modifier: Modifier = Modifier) {
+    val colors = FilmowoTheme.colors
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Card(
+        // Ciemna kotwica ekranu: łączny czas oglądania.
+        StatTile(
+            iconRes = R.drawable.ic_bar_chart,
+            value = formatDuration(stats.totalMinutes),
+            label = stringResource(R.string.stats_total_time),
+            detail = stringResource(R.string.stats_total_hours, stats.totalMinutes / 60),
+            container = colors.inverse,
+            content = colors.onInverse,
+            muted = colors.onInverseMuted,
+            iconContainer = colors.brand,
+            iconContent = colors.onBrand,
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        )
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    stringResource(R.string.stats_total_time),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-                Text(
-                    formatDuration(stats.totalMinutes),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-                Text(
-                    stringResource(R.string.stats_total_hours, stats.totalMinutes / 60),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
+            StatTile(
+                iconRes = R.drawable.ic_movie,
+                value = stats.moviesWatched.toString(),
+                label = stringResource(R.string.stats_movies),
+                detail = stringResource(R.string.stats_time, formatDuration(stats.movieMinutes)),
+                container = colors.peach,
+                content = colors.onPeach,
+                muted = colors.onPeach,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            )
+            StatTile(
+                iconRes = R.drawable.ic_video_library,
+                value = stats.episodesWatched.toString(),
+                label = stringResource(R.string.stats_episodes),
+                detail = stringResource(R.string.stats_time, formatDuration(stats.episodeMinutes)),
+                container = colors.sky,
+                content = colors.onSky,
+                muted = colors.onSky,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            )
         }
-        StatCard(
-            iconRes = R.drawable.ic_movie,
-            title = stringResource(R.string.stats_movies),
-            value = stats.moviesWatched.toString(),
-            detail = stringResource(R.string.stats_time, formatDuration(stats.movieMinutes)),
-        )
-        StatCard(
-            iconRes = R.drawable.ic_video_library,
-            title = stringResource(R.string.stats_episodes),
-            value = stats.episodesWatched.toString(),
-            detail = stringResource(R.string.stats_time, formatDuration(stats.episodeMinutes)),
-        )
     }
 }
 
+/** Kafelek liczby: ikona w kółku, duża wartość w kroju display, podpis i szczegół. */
 @Composable
-private fun StatCard(
+private fun StatTile(
     @DrawableRes iconRes: Int,
-    title: String,
     value: String,
+    label: String,
     detail: String,
+    container: Color,
+    content: Color,
+    muted: Color,
+    modifier: Modifier = Modifier,
+    iconContainer: Color = FilmowoTheme.colors.surfaceRaised,
+    iconContent: Color = FilmowoTheme.colors.ink,
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = modifier
+            .background(container, FilmowoRadius.Lg)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(iconContainer, FilmowoRadius.Pill),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                painterResource(iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    detail,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(value, style = MaterialTheme.typography.headlineMedium)
+            Icon(painterResource(iconRes), contentDescription = null, modifier = Modifier.size(20.dp), tint = iconContent)
         }
+        Spacer(Modifier.height(10.dp))
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = content)
+        Text(label, style = MaterialTheme.typography.labelLarge, color = content)
+        Text(detail, style = MaterialTheme.typography.bodySmall, color = muted)
     }
 }
 

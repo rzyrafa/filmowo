@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.Poster
+import pl.filmowo.core.ui.components.filmowoTopBarColors
 import pl.filmowo.data.remote.TmdbImages
 import java.io.File
 
@@ -33,6 +34,7 @@ internal fun DetailsTopBar(title: String?, onBack: () -> Unit) {
                 Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.action_back))
             }
         },
+        colors = filmowoTopBarColors(),
     )
 }
 
@@ -51,7 +53,7 @@ internal fun DetailsHeader(
             modifier = Modifier.width(128.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineSmall)
+            Text(title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
             if (originalTitle != null) {
                 Text(
                     originalTitle,
@@ -73,10 +75,10 @@ internal fun DetailsHeader(
 @Composable
 internal fun OverviewSection(overview: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.details_overview), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.details_overview), style = MaterialTheme.typography.titleLarge)
         Text(
             text = overview.ifBlank { stringResource(R.string.details_no_overview) },
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }

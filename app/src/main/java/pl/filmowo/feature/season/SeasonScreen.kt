@@ -1,18 +1,18 @@
 package pl.filmowo.feature.season
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,10 @@ import pl.filmowo.core.ui.UiState
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.PlaceholderContent
+import pl.filmowo.core.ui.components.SegmentedProgress
+import pl.filmowo.core.ui.components.WatchedCheck
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
 import pl.filmowo.feature.details.DetailsTopBar
 import pl.filmowo.feature.details.formatRuntime
 
@@ -70,10 +76,13 @@ private fun EpisodeList(
     onSeasonWatchedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         item(key = "header") {
             SeasonHeader(state, onSeasonWatchedChange)
-            HorizontalDivider()
         }
         items(rows, key = { it.info.episodeNumber }) { row ->
             EpisodeItem(
@@ -81,7 +90,6 @@ private fun EpisodeList(
                 enabled = state.isTracked && row.isAired,
                 onWatchedChange = { onEpisodeWatchedChange(row.info.episodeNumber, it) },
             )
-            HorizontalDivider()
         }
     }
 }
@@ -91,24 +99,25 @@ private fun SeasonHeader(state: SeasonUiState, onSeasonWatchedChange: (Boolean) 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(top = 8.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         val progress = state.progress
         when {
             state.isTracked && progress != null -> {
-                Text(
-                    stringResource(R.string.season_progress, progress.watchedCount, progress.totalCount),
-                    style = MaterialTheme.typography.titleMedium,
-                )
                 if (progress.totalCount > 0) {
-                    LinearProgressIndicator(
-                        progress = { progress.watchedCount.toFloat() / progress.totalCount },
-                        modifier = Modifier.fillMaxWidth(),
+                    SegmentedProgress(
+                        done = progress.watchedCount,
+                        total = progress.totalCount,
+                        label = stringResource(R.string.season_progress, progress.watchedCount, progress.totalCount),
                     )
                 }
                 if (progress.airedCount > 0) {
-                    FilledTonalButton(onClick = { onSeasonWatchedChange(!progress.isComplete) }) {
+                    val colors = FilmowoTheme.colors
+                    Button(
+                        onClick = { onSeasonWatchedChange(!progress.isComplete) },
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.peach, contentColor = colors.onPeach),
+                    ) {
                         Text(
                             stringResource(
                                 if (progress.isComplete) R.string.season_unmark_all else R.string.season_mark_all,
@@ -131,25 +140,31 @@ private fun SeasonHeader(state: SeasonUiState, onSeasonWatchedChange: (Boolean) 
     }
 }
 
+/** Wiersz odcinka jako biała karta; po prawej pole odhaczenia – miętowe po obejrzeniu. */
 @Composable
 private fun EpisodeItem(
     row: EpisodeRow,
     enabled: Boolean,
     onWatchedChange: (Boolean) -> Unit,
 ) {
+    val colors = FilmowoTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) { onWatchedChange(!row.isWatched) }
-            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            .clip(FilmowoRadius.Md)
+            .background(colors.surfaceRaised)
+            .toggleable(value = row.isWatched, enabled = enabled, role = Role.Checkbox, onValueChange = onWatchedChange)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             val number = row.info.episodeNumber
             Text(
                 text = row.info.name?.let { stringResource(R.string.episode_title, number, it) }
                     ?: stringResource(R.string.episode_number, number),
                 style = MaterialTheme.typography.titleSmall,
+                color = if (row.isWatched) colors.inkMuted else colors.ink,
             )
             val meta = listOfNotNull(
                 row.info.airDate?.let {
@@ -157,24 +172,17 @@ private fun EpisodeItem(
                 } ?: stringResource(R.string.episode_no_date),
                 row.info.runtimeMinutes?.let { formatRuntime(it) },
             ).joinToString(" · ")
-            Text(
-                meta,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(meta, style = MaterialTheme.typography.bodySmall, color = colors.inkMuted)
             if (row.info.overview.isNotBlank()) {
                 Text(
                     row.info.overview,
                     style = MaterialTheme.typography.bodySmall,
+                    color = colors.ink,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
-        Checkbox(
-            checked = row.isWatched,
-            onCheckedChange = onWatchedChange,
-            enabled = enabled,
-        )
+        WatchedCheck(checked = row.isWatched, enabled = enabled)
     }
 }

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#B3261E</color>
+    <color name="ic_launcher_background">#1F1C27</color>
+    <!-- Tło okna przed pierwszą klatką Compose: surface z design systemu. -->
+    <color name="window_background">#EBE8E1</color>
 </resources>

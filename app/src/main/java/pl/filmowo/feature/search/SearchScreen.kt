@@ -1,26 +1,30 @@
 package pl.filmowo.feature.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,11 +33,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,12 +47,14 @@ import pl.filmowo.R
 import pl.filmowo.core.ui.components.ErrorContent
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.MediaFilterRow
+import pl.filmowo.core.ui.components.MediaTile
 import pl.filmowo.core.ui.components.PlaceholderContent
-import pl.filmowo.core.ui.components.Poster
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.components.messageRes
+import pl.filmowo.core.ui.theme.FilmowoRadius
+import pl.filmowo.core.ui.theme.FilmowoTheme
+import pl.filmowo.core.ui.theme.ToneName
 import pl.filmowo.data.remote.TmdbImages
-import pl.filmowo.domain.model.MediaType
 import pl.filmowo.domain.model.SearchResult
 
 @Composable
@@ -63,6 +69,7 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
             SearchField(query = state.query, onQueryChange = viewModel::onQueryChange)
+            Spacer(Modifier.height(4.dp))
             MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterChange)
             SearchResults(
                 results = state.results,
@@ -74,24 +81,44 @@ fun SearchScreen(
     }
 }
 
+/** Biała wyspa z cieniem na tle ekranu; „Wyczyść” tylko przy niepustym polu. */
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     val focusManager = LocalFocusManager.current
-    OutlinedTextField(
+    val colors = FilmowoTheme.colors
+    TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .shadow(6.dp, FilmowoRadius.Md, ambientColor = colors.ink.copy(alpha = 0.2f), spotColor = colors.ink.copy(alpha = 0.2f)),
+        shape = FilmowoRadius.Md,
+        textStyle = MaterialTheme.typography.bodyLarge,
         placeholder = { Text(stringResource(R.string.search_hint)) },
         leadingIcon = { Icon(painterResource(R.drawable.ic_search), contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(painterResource(R.drawable.ic_close), stringResource(R.string.action_clear))
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(36.dp),
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = colors.surfaceSunken, contentColor = colors.ink),
+                ) {
+                    Icon(painterResource(R.drawable.ic_close), stringResource(R.string.action_clear), Modifier.size(18.dp))
                 }
             }
         },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = colors.surfaceRaised,
+            unfocusedContainerColor = colors.surfaceRaised,
+            focusedIndicatorColor = colors.surfaceRaised,
+            unfocusedIndicatorColor = colors.surfaceRaised,
+            cursorColor = colors.ink,
+            focusedLeadingIconColor = colors.inkMuted,
+            unfocusedLeadingIconColor = colors.inkMuted,
+            focusedPlaceholderColor = colors.inkMuted,
+            unfocusedPlaceholderColor = colors.inkMuted,
+        ),
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
@@ -106,9 +133,9 @@ private fun SearchResults(
     onOpenResult: (SearchResult) -> Unit,
 ) {
     when (results) {
-        SearchResultsState.Idle -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_placeholder))
+        SearchResultsState.Idle -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_placeholder), tone = ToneName.SKY)
         SearchResultsState.Loading -> LoadingContent()
-        SearchResultsState.Empty -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_empty))
+        SearchResultsState.Empty -> PlaceholderContent(R.drawable.ic_search, stringResource(R.string.search_empty), tone = ToneName.NEUTRAL)
         is SearchResultsState.Error -> ErrorContent(results.error, onRetry)
         is SearchResultsState.Success -> ResultList(results, onLoadMore, onOpenResult)
     }
@@ -120,26 +147,38 @@ private fun ResultList(
     onLoadMore: () -> Unit,
     onOpenResult: (SearchResult) -> Unit,
 ) {
-    val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
 
-    // Doładuj kolejną stronę, gdy użytkownik zbliża się do końca listy.
-    LaunchedEffect(listState, results.items.size) {
+    // Doładuj kolejną stronę, gdy użytkownik zbliża się do końca siatki.
+    LaunchedEffect(gridState, results.items.size) {
         snapshotFlow {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisible >= listState.layoutInfo.totalItemsCount - LOAD_MORE_THRESHOLD
+            val lastVisible = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= gridState.layoutInfo.totalItemsCount - LOAD_MORE_THRESHOLD
         }
             .distinctUntilChanged()
             .filter { it }
             .collect { onLoadMore() }
     }
 
-    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 150.dp),
+        state = gridState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         items(results.items, key = { "${it.mediaType}-${it.id}" }) { item ->
-            SearchResultRow(item, onClick = { onOpenResult(item) })
-            HorizontalDivider()
+            MediaTile(
+                title = item.title,
+                mediaType = item.mediaType,
+                year = item.year,
+                posterModel = TmdbImages.posterSmall(item.posterPath),
+                onClick = { onOpenResult(item) },
+            )
         }
         if (results.isLoadingMore || results.loadMoreError != null) {
-            item(key = "footer") {
+            item(key = "footer", span = { GridItemSpan(maxLineSpan) }) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -147,7 +186,7 @@ private fun ResultList(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (results.isLoadingMore) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = FilmowoTheme.colors.brand)
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(stringResource(results.loadMoreError!!.messageRes), style = MaterialTheme.typography.bodyMedium)
@@ -158,45 +197,6 @@ private fun ResultList(
             }
         }
     }
-}
-
-@Composable
-private fun SearchResultRow(item: SearchResult, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Poster(
-            model = TmdbImages.posterSmall(item.posterPath),
-            contentDescription = null,
-            modifier = Modifier.width(64.dp),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(item.title, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = mediaMeta(item.mediaType, item.year),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (item.overview.isNotBlank()) {
-                Text(
-                    text = item.overview,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun mediaMeta(type: MediaType, year: Int?): String {
-    val typeLabel = stringResource(if (type == MediaType.MOVIE) R.string.media_movie else R.string.media_show)
-    return if (year != null) "$typeLabel · $year" else typeLabel
 }
 
 private const val LOAD_MORE_THRESHOLD = 5

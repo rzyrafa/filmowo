@@ -1,48 +1,42 @@
 package pl.filmowo.feature.library
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pl.filmowo.R
 import pl.filmowo.core.ui.components.LoadingContent
 import pl.filmowo.core.ui.components.MediaFilterRow
+import pl.filmowo.core.ui.components.MediaTile
 import pl.filmowo.core.ui.components.PlaceholderContent
-import pl.filmowo.core.ui.components.Poster
+import pl.filmowo.core.ui.components.SegmentedTab
+import pl.filmowo.core.ui.components.SegmentedTabs
+import pl.filmowo.core.ui.components.TileProgress
 import pl.filmowo.core.ui.components.TopLevelTopBar
 import pl.filmowo.core.ui.components.progressLabel
+import pl.filmowo.core.ui.theme.ToneName
 import pl.filmowo.data.remote.TmdbImages
 import pl.filmowo.domain.model.MediaType
 import java.io.File
@@ -64,31 +58,29 @@ fun LibraryScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            PrimaryTabRow(selectedTabIndex = state.tab.ordinal) {
-                LibraryTab.entries.forEach { tab ->
-                    Tab(
-                        selected = tab == state.tab,
-                        onClick = { viewModel.onTabSelected(tab) },
-                        text = {
-                            Text(
-                                stringResource(R.string.library_tab_with_count, stringResource(tab.labelRes), state.counts[tab] ?: 0),
-                                maxLines = 1,
-                            )
-                        },
-                    )
-                }
-            }
+            SegmentedTabs(
+                tabs = LibraryTab.entries.map { SegmentedTab(stringResource(it.labelRes), state.counts[it] ?: 0) },
+                selectedIndex = state.tab.ordinal,
+                onSelect = { viewModel.onTabSelected(LibraryTab.entries[it]) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
             MediaFilterRow(selected = state.filter, onSelect = viewModel::onFilterSelected)
             when {
                 state.isLoading -> LoadingContent()
                 state.entries.isEmpty() -> PlaceholderContent(
-                    iconRes = R.drawable.ic_video_library,
+                    iconRes = state.tab.emptyIconRes,
                     text = stringResource(state.tab.emptyRes),
+                    tone = state.tab.toneName,
                 )
-                else -> LazyColumn(Modifier.fillMaxSize()) {
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 150.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
                     items(state.entries, key = { "${it.item.mediaType}-${it.item.tmdbId}" }) { entry ->
-                        LibraryRow(entry, onClick = { onOpenItem(entry.item.tmdbId, entry.item.mediaType) })
-                        HorizontalDivider()
+                        LibraryTile(entry, onClick = { onOpenItem(entry.item.tmdbId, entry.item.mediaType) })
                     }
                 }
             }
@@ -121,61 +113,19 @@ private fun SortMenu(current: LibrarySort, onSelect: (LibrarySort) -> Unit) {
 }
 
 @Composable
-private fun LibraryRow(entry: LibraryEntry, onClick: () -> Unit) {
+private fun LibraryTile(entry: LibraryEntry, onClick: () -> Unit) {
     val item = entry.item
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Poster(
-            model = item.localPosterFile?.let(::File) ?: TmdbImages.posterSmall(item.metadata.posterPath),
-            contentDescription = null,
-            modifier = Modifier.width(56.dp),
-        )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                item.metadata.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            val type = stringResource(if (item.mediaType == MediaType.MOVIE) R.string.media_movie else R.string.media_show)
-            Text(
-                text = listOfNotNull(type, item.metadata.year?.toString()).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            entry.progress?.let { progress ->
-                Text(
-                    progressLabel(progress),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                LinearProgressIndicator(
-                    progress = { progress.percent / 100f },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-        if (item.rating != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painterResource(R.drawable.ic_star),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.tertiary,
-                )
-                Text(
-                    stringResource(R.string.rating_short, item.rating),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
-        }
-    }
+    val progress = entry.progress
+    MediaTile(
+        title = item.metadata.title,
+        mediaType = item.mediaType,
+        year = item.metadata.year,
+        posterModel = item.localPosterFile?.let(::File) ?: TmdbImages.posterSmall(item.metadata.posterPath),
+        onClick = onClick,
+        rating = item.rating,
+        status = item.status,
+        progress = progress?.let { TileProgress(it.watchedCount, it.airedCount, progressLabel(it)) },
+    )
 }
 
 private val LibraryTab.labelRes: Int
@@ -183,6 +133,20 @@ private val LibraryTab.labelRes: Int
         LibraryTab.WATCHING -> R.string.library_tab_watching
         LibraryTab.PLANNED -> R.string.library_tab_planned
         LibraryTab.WATCHED -> R.string.library_tab_watched
+    }
+
+private val LibraryTab.toneName: ToneName
+    get() = when (this) {
+        LibraryTab.WATCHING -> ToneName.LILAC
+        LibraryTab.PLANNED -> ToneName.BUTTER
+        LibraryTab.WATCHED -> ToneName.MINT
+    }
+
+private val LibraryTab.emptyIconRes: Int
+    get() = when (this) {
+        LibraryTab.WATCHING -> R.drawable.ic_video_library
+        LibraryTab.PLANNED -> R.drawable.ic_bookmark
+        LibraryTab.WATCHED -> R.drawable.ic_check
     }
 
 private val LibraryTab.emptyRes: Int

@@ -1,48 +1,81 @@
 package pl.filmowo.core.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 
-private val LightColors = lightColorScheme(
-    primary = BrandRed,
-    secondary = BrandAmber,
-    tertiary = BrandTeal,
-)
+private val LocalFilmowoColors = staticCompositionLocalOf { LightFilmowoColors }
 
-private val DarkColors = darkColorScheme(
-    primary = BrandRedLight,
-    secondary = BrandAmberLight,
-    tertiary = BrandTealLight,
-)
+/** Dostęp do pełnej palety: `FilmowoTheme.colors.peach` itd. */
+object FilmowoTheme {
+    val colors: FilmowoColors
+        @Composable @ReadOnlyComposable
+        get() = LocalFilmowoColors.current
+}
+
+private fun FilmowoColors.toColorScheme(dark: Boolean): ColorScheme {
+    val base = if (dark) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = ink,
+        onPrimary = onInk,
+        primaryContainer = lilac,
+        onPrimaryContainer = onLilac,
+        secondary = brand,
+        onSecondary = onBrand,
+        secondaryContainer = peach,
+        onSecondaryContainer = onPeach,
+        tertiary = onButter,
+        onTertiary = butter,
+        tertiaryContainer = mint,
+        onTertiaryContainer = onMint,
+        background = surface,
+        onBackground = ink,
+        surface = surface,
+        onSurface = ink,
+        surfaceVariant = surfaceSunken,
+        onSurfaceVariant = inkMuted,
+        surfaceContainerLowest = surfaceRaised,
+        surfaceContainerLow = surfaceRaised,
+        surfaceContainer = surfaceRaised,
+        surfaceContainerHigh = surfaceRaised,
+        surfaceContainerHighest = surfaceSunken,
+        surfaceBright = surfaceRaised,
+        surfaceDim = surfaceSunken,
+        inverseSurface = inverse,
+        inverseOnSurface = onInverse,
+        inversePrimary = brand,
+        error = danger,
+        onError = surfaceRaised,
+        errorContainer = dangerSoft,
+        onErrorContainer = onDangerSoft,
+        outline = lineStrong,
+        outlineVariant = line,
+        scrim = scrim,
+    )
+}
 
 /**
- * Motyw aplikacji. Na Androidzie 12+ używa kolorów dynamicznych (z tapety),
- * na starszych – własnej palety. Tryb ciemny podąża za ustawieniem systemu.
+ * Motyw aplikacji według design systemu Filmowo. Kolory dynamiczne (z tapety)
+ * są wyłączone, bo rozmyłyby stałe role pasteli. Tryb ciemny podąża za systemem.
  */
 @Composable
 fun FilmowoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
+    val colors = if (darkTheme) DarkFilmowoColors else LightFilmowoColors
+    CompositionLocalProvider(LocalFilmowoColors provides colors) {
+        MaterialTheme(
+            colorScheme = colors.toColorScheme(darkTheme),
+            typography = FilmowoTypography,
+            shapes = FilmowoShapes,
+            content = content,
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
-    )
 }
